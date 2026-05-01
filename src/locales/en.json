@@ -1,0 +1,118 @@
+{
+  "app": {
+    "brand": "Uncle Bondq",
+    "cart": "Cart",
+    "menu": "Menu",
+    "home": "Home",
+    "orders": "My Orders",
+    "allProducts": "All Products",
+    "admin": "Admin",
+    "back": "Back",
+    "languageEnglish": "English",
+    "languageArabic": "العربية",
+    "configuredError": "Supabase is not configured, so demo UI is shown.",
+    "loadError": "Unable to load data.",
+    "submitError": "Unable to confirm the order."
+  },
+  "nav": {
+    "home": "Home",
+    "cart": "Cart",
+    "orders": "Orders",
+    "all": "Products"
+  },
+  "steps": {
+    "categories": "Categories",
+    "types": "Product Types",
+    "sections": "Sections",
+    "products": "Products",
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "success": "Success",
+    "orders": "My Orders",
+    "admin": "Admin Orders"
+  },
+  "categories": {
+    "title": "Choose a category",
+    "copy": "Browse Uncle Bondq categories and choose what fits your order.",
+    "select": "Select",
+    "fallback": "Carefully selected collection",
+    "empty": "No categories found yet."
+  },
+  "types": {
+    "title": "Choose a product type",
+    "copy": "Only types related to the selected category appear here.",
+    "empty": "No product types found for this category.",
+    "productType": "Product type"
+  },
+  "sections": {
+    "title": "Choose a section",
+    "copy": "Sections are filtered by the chosen product type.",
+    "empty": "No sections found for this type yet.",
+    "select": "View products"
+  },
+  "products": {
+    "title": "{{scope}}",
+    "allTitle": "All products",
+    "filteredTitle": "{{section}}",
+    "copy": "Choose a product and add it to cart. Prices are in Syrian pounds.",
+    "count": "{{count}} products",
+    "viewCart": "View Cart ({{count}})",
+    "empty": "No matching products found.",
+    "descriptionFallback": "Premium Uncle Bondq product",
+    "details": "Product details",
+    "addToCart": "Add to Cart",
+    "weight": "Weight"
+  },
+  "cart": {
+    "title": "Cart",
+    "copy": "Adjust quantities or remove products before checkout.",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "emptyTitle": "Your cart is empty",
+    "emptyCopy": "Add products from the store and they will appear here.",
+    "continue": "Continue Shopping",
+    "remove": "Remove",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity"
+  },
+  "checkout": {
+    "title": "Confirm order",
+    "copy": "Enter your phone number and address to send the order.",
+    "phone": "Phone number",
+    "phonePlaceholder": "+963...",
+    "address": "Delivery address",
+    "addressPlaceholder": "City, street, building details",
+    "notes": "Optional notes",
+    "notesPlaceholder": "Delivery time or any note",
+    "submit": "Confirm order",
+    "submitting": "Confirming...",
+    "summary": "Order summary"
+  },
+  "success": {
+    "title": "Order sent",
+    "copy": "We will use this device token to show your orders later without login.",
+    "summary": "Order summary",
+    "orderId": "Order ID: {{id}}",
+    "home": "Back to Home"
+  },
+  "orders": {
+    "title": "My Orders",
+    "copy": "These orders are linked to a token saved on this device.",
+    "adminTitle": "All Orders",
+    "adminCopy": "Manager view for all orders without filtering.",
+    "empty": "No orders yet.",
+    "refresh": "Refresh",
+    "items": "Items",
+    "phone": "Phone",
+    "address": "Address",
+    "notes": "Notes",
+    "date": "Date",
+    "status": {
+      "new": "New",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  }
+}
