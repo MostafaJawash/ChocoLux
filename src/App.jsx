@@ -16,12 +16,13 @@ import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getPriceAmount, getProductImages } from './utils/store'
 
 const CART_STORAGE_KEY = 'uncle-bondq-cart'
-const TOKEN_STORAGE_KEY = 'uncle-bondq-token'
+const USER_ID_STORAGE_KEY = 'uncle-bondq-user-id'
+const PHONE_STORAGE_KEY = 'uncle-bondq-phone'
 const initialCheckout = { phone: '', address: '', notes: '' }
 
 const demoCategories = [
-  { id: 'demo-cat-1', name: 'شوكولا', description: 'علب وهدايا شوكولا' },
-  { id: 'demo-cat-2', name: 'ضيافة', description: 'اختيارات للمناسبات' },
+  { id: 'demo-cat-1', name: 'شوكولا' },
+  { id: 'demo-cat-2', name: 'ضيافة' },
 ]
 
 const demoTypes = [
@@ -43,7 +44,6 @@ const demoProducts = [
     weight: '500 غ',
     category_id: 'demo-cat-1',
     type_id: 'demo-type-1',
-    product_type_id: 'demo-type-1',
     section_id: 'demo-section-1',
   },
   {
@@ -54,48 +54,21 @@ const demoProducts = [
     weight: '750 غ',
     category_id: 'demo-cat-2',
     type_id: 'demo-type-2',
-    product_type_id: 'demo-type-2',
     section_id: 'demo-section-2',
   },
 ]
 
-const productSelect = `
-  *,
-  categories:category_id (id, name),
-  product_types:type_id (id, name),
-  sections:section_id (id, name, type_id)
-`
+const productColumns = 'id, name, price, description, weight, images, category_id, type_id, section_id'
+const orderColumns = 'id, customer_name, phone, address, notes, status, total_amount, created_at, order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price)'
 
-const legacyProductSelect = `
-  *,
-  categories:category_id (id, name),
-  product_types:product_type_id (id, name),
-  sections:section_id (id, name, type_id)
-`
+const ensureUserId = () => {
+  const existingUserId = localStorage.getItem(USER_ID_STORAGE_KEY)
+  if (existingUserId) return existingUserId
 
-const normalizeProduct = (product) => ({
-  ...product,
-  category_name: product.categories?.name || product.category_name || '',
-  type_name: product.product_types?.name || product.type_name || '',
-  type_id: product.type_id || product.product_type_id || product.product_types?.id || '',
-  product_type_id: product.product_type_id || product.type_id || product.product_types?.id || '',
-  section_name: product.sections?.name || product.section_name || '',
-  section_id: product.section_id || product.sections?.id || '',
-})
+  const userId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  localStorage.setItem(USER_ID_STORAGE_KEY, userId)
 
-const normalizeProducts = (records = []) =>
-  records.filter((product) => product.is_active !== false).map(normalizeProduct)
-
-const getStoredToken = () => localStorage.getItem(TOKEN_STORAGE_KEY) || ''
-
-const ensureUserToken = () => {
-  const existingToken = getStoredToken()
-  if (existingToken) return existingToken
-
-  const token = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-  localStorage.setItem(TOKEN_STORAGE_KEY, token)
-
-  return token
+  return userId
 }
 
 function App() {
@@ -119,6 +92,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [error, setError] = useState('')
+  const [ordersPhone, setOrdersPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
   const [cart, setCart] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
@@ -141,6 +115,14 @@ function App() {
   }, [cart])
 
   useEffect(() => {
+    ensureUserId()
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(PHONE_STORAGE_KEY, ordersPhone.trim())
+  }, [ordersPhone])
+
+  useEffect(() => {
     async function loadStorefront() {
       if (!isSupabaseConfigured) {
         setCategories(demoCategories)
@@ -153,17 +135,12 @@ function App() {
       }
 
       try {
-        let productsResult = await supabase.from('products').select(productSelect).order('created_at', { ascending: false })
-        if (productsResult.error && /type_id|relationship|schema cache/i.test(productsResult.error.message || '')) {
-          productsResult = await supabase.from('products').select(legacyProductSelect).order('created_at', { ascending: false })
-        }
-
-        const [categoriesResult, typesResult, sectionsResult] = await Promise.all([
-          supabase.from('categories').select('*').order('name'),
-          supabase.from('product_types').select('*').order('name'),
-          supabase.from('sections').select('*').order('name'),
+        const [categoriesResult, typesResult, sectionsResult, productsResult] = await Promise.all([
+          supabase.from('categories').select('id, name').order('name'),
+          supabase.from('product_types').select('id, name').order('name'),
+          supabase.from('sections').select('id, name, type_id').order('name'),
+          supabase.from('products').select(productColumns),
         ])
-
         if (categoriesResult.error) throw categoriesResult.error
         if (typesResult.error) throw typesResult.error
         if (sectionsResult.error) throw sectionsResult.error
@@ -172,7 +149,7 @@ function App() {
         setCategories(categoriesResult.data || [])
         setProductTypes(typesResult.data || [])
         setSections(sectionsResult.data || [])
-        setProducts(normalizeProducts(productsResult.data || []))
+        setProducts(productsResult.data || [])
       } catch (requestError) {
         setError(requestError.message || t('app.loadError'))
       } finally {
@@ -199,7 +176,7 @@ function App() {
 
   const relatedSections = useMemo(() => {
     if (!selectedType) return []
-    return sections.filter((section) => section.type_id === selectedType.id || section.product_type_id === selectedType.id)
+    return sections.filter((section) => section.type_id === selectedType.id)
   }, [sections, selectedType])
 
   const filteredProducts = useMemo(() => {
@@ -252,7 +229,7 @@ function App() {
           id: product.id,
           name: product.name,
           price: product.price || 0,
-          description: product.preview_description || product.description || '',
+          description: product.description || '',
           weight: product.weight || '',
           image: getProductImages(product)[0] || '',
           quantity,
@@ -280,7 +257,7 @@ function App() {
     setSelectedProduct(product)
   }
 
-  const fetchOrders = useCallback(async (admin = false) => {
+  const fetchOrders = useCallback(async (admin = false, phoneOverride = '') => {
     if (!isSupabaseConfigured) return
 
     setIsOrdersLoading(true)
@@ -289,12 +266,17 @@ function App() {
     try {
       let query = supabase
         .from('orders')
-        .select('*, order_items(*)')
+        .select(orderColumns)
         .order('created_at', { ascending: false })
 
       if (!admin) {
-        const token = getStoredToken()
-        query = token ? query.eq('token', token) : query.eq('token', '__no_orders__')
+        const phone = (phoneOverride || ordersPhone).trim()
+        if (!phone) {
+          setOrders([])
+          setIsOrdersLoading(false)
+          return
+        }
+        query = query.eq('phone', phone)
       }
 
       const { data, error: ordersError } = await query
@@ -307,7 +289,7 @@ function App() {
     } finally {
       setIsOrdersLoading(false)
     }
-  }, [t])
+  }, [ordersPhone, t])
 
   const submitOrder = async (event) => {
     event.preventDefault()
@@ -317,33 +299,17 @@ function App() {
     setError('')
 
     try {
-      const token = ensureUserToken()
-      const basePayload = {
+      ensureUserId()
+      const orderPayload = {
         customer_name: '',
         phone: checkout.phone,
         address: checkout.address,
         notes: checkout.notes,
         total_amount: cartTotal,
         status: 'pending',
-        token,
       }
 
-      let orderResult = await supabase.from('orders').insert(basePayload).select('id, created_at').single()
-      if (orderResult.error && /address|customer_name|schema cache/i.test(orderResult.error.message || '')) {
-        const legacyPayload = {
-          phone: basePayload.phone,
-          notes: basePayload.notes,
-          total_amount: basePayload.total_amount,
-          status: basePayload.status,
-          token: basePayload.token,
-        }
-        orderResult = await supabase
-          .from('orders')
-          .insert({ ...legacyPayload, delivery_address: checkout.address })
-          .select('id, created_at')
-          .single()
-      }
-
+      const orderResult = await supabase.from('orders').insert(orderPayload).select('id, created_at').single()
       if (orderResult.error) throw orderResult.error
 
       const orderItems = cart.map((item) => ({
@@ -366,7 +332,8 @@ function App() {
       })
       setCart([])
       setCheckout(initialCheckout)
-      await fetchOrders(false)
+      setOrdersPhone(checkout.phone)
+      await fetchOrders(false, checkout.phone)
       setStep('success')
     } catch (submitError) {
       setError(submitError.message || t('app.submitError'))
@@ -413,6 +380,34 @@ function App() {
         </button>
         <nav className={isMenuOpen ? 'topnav is-open' : 'topnav'} aria-label={t('app.menu')}>
           {step !== 'categories' && <BackButton onClick={navigateBack} t={t} />}
+          <button className="nav-button primary-nav" type="button" onClick={goHome}>
+            {t('app.home')}
+          </button>
+          <button className="nav-button primary-nav" type="button" onClick={() => setStep('cart')}>
+            {t('app.cart')} ({cartCount})
+          </button>
+          <button
+            className="nav-button primary-nav"
+            type="button"
+            onClick={() => {
+              fetchOrders(false)
+              setStep('orders')
+            }}
+          >
+            {t('app.orders')}
+          </button>
+          <button
+            className="nav-button primary-nav"
+            type="button"
+            onClick={() => {
+              setSelectedCategory(null)
+              setSelectedType(null)
+              setSelectedSection(null)
+              setStep('allProducts')
+            }}
+          >
+            {t('app.allProducts')}
+          </button>
           <button
             className="nav-button"
             type="button"
@@ -527,6 +522,8 @@ function App() {
               orders={orders}
               isLoading={isOrdersLoading}
               language={language}
+              phone={ordersPhone}
+              onPhoneChange={setOrdersPhone}
               onRefresh={() => fetchOrders(false)}
               t={t}
             />

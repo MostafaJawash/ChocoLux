@@ -37,7 +37,7 @@ const parseImageList = (images) => {
 
 export const getProductImages = (product = {}) => {
   const imageList = parseImageList(product.images)
-  const allImages = [product.image_url, product.image, ...imageList]
+  const allImages = imageList
     .filter((image) => typeof image === 'string')
     .map((image) => image.trim())
     .filter(Boolean)

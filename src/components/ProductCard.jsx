@@ -2,7 +2,6 @@ import { getProductImages, money } from '../utils/store'
 
 function ProductCard({ product, onOpen, onAddToCart, t }) {
   const image = getProductImages(product)[0]
-  const categoryName = product.category_name || product.categories?.name
 
   return (
     <article className="product-card">
@@ -15,8 +14,7 @@ function ProductCard({ product, onOpen, onAddToCart, t }) {
             <h3>{product.name}</h3>
             <strong>{money(product.price)}</strong>
           </div>
-          {categoryName && <span className="product-category">{categoryName}</span>}
-          <p>{product.preview_description || product.description || t('products.descriptionFallback')}</p>
+          <p>{product.description || t('products.descriptionFallback')}</p>
           {product.weight && <span className="product-weight">{product.weight}</span>}
         </div>
       </button>

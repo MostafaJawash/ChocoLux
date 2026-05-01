@@ -138,6 +138,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -936,6 +937,37 @@ img {
   grid-template-columns: 1fr;
 }
 
+.phone-filter {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 420px);
+  margin-bottom: 18px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.phone-filter input,
+.section-select select {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 12px 14px;
+}
+
+.section-select {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 520px);
+  margin-bottom: 18px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
 .order-card {
   display: grid;
   gap: 16px;
@@ -1091,6 +1123,16 @@ img {
   .modal-media > img {
     object-fit: contain;
     padding: 18px;
+  }
+}
+
+@media (min-width: 761px) {
+  .store-shell {
+    padding-bottom: 56px;
+  }
+
+  .bottom-nav {
+    display: none;
   }
 }
 

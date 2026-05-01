@@ -10,7 +10,7 @@ const formatDate = (value, language) => {
   }).format(new Date(value))
 }
 
-function OrdersPage({ orders, isLoading, isAdmin = false, language, onRefresh, t }) {
+function OrdersPage({ orders, isLoading, isAdmin = false, language, phone, onPhoneChange, onRefresh, t }) {
   return (
     <>
       <PageIntro
@@ -25,6 +25,17 @@ function OrdersPage({ orders, isLoading, isAdmin = false, language, onRefresh, t
           ↻ {t('orders.refresh')}
         </button>
       </div>
+
+      {!isAdmin && (
+        <label className="phone-filter">
+          {t('orders.phoneFilter')}
+          <input
+            value={phone}
+            onChange={(event) => onPhoneChange(event.target.value)}
+            placeholder={t('checkout.phonePlaceholder')}
+          />
+        </label>
+      )}
 
       {isLoading ? (
         <div className="orders-list">
@@ -46,7 +57,7 @@ function OrdersPage({ orders, isLoading, isAdmin = false, language, onRefresh, t
 
               <div className="order-meta">
                 <p>{t('orders.phone')}: {order.phone}</p>
-                <p>{t('orders.address')}: {order.address || order.delivery_address}</p>
+                <p>{t('orders.address')}: {order.address}</p>
                 {order.notes && <p>{t('orders.notes')}: {order.notes}</p>}
               </div>
 

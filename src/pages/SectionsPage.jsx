@@ -1,6 +1,14 @@
+import { useState } from 'react'
 import PageIntro from '../components/PageIntro'
 
 function SectionsPage({ sections, isLoading, onSelect, t }) {
+  const [selectedSectionId, setSelectedSectionId] = useState('')
+
+  const handleSelect = (section) => {
+    setSelectedSectionId(section.id)
+    onSelect(section)
+  }
+
   return (
     <>
       <PageIntro eyebrow={t('steps.sections')} title={t('sections.title')} copy={t('sections.copy')} />
@@ -12,15 +20,34 @@ function SectionsPage({ sections, isLoading, onSelect, t }) {
           ))}
         </div>
       ) : sections.length ? (
-        <div className="choice-grid two-column">
-          {sections.map((section) => (
-            <button className="choice-card compact-choice" type="button" key={section.id} onClick={() => onSelect(section)}>
-              <span aria-hidden="true">◈</span>
-              <strong>{section.name}</strong>
-              <small>{t('sections.select')}</small>
-            </button>
-          ))}
-        </div>
+        <>
+          <label className="section-select">
+            {t('sections.select')}
+            <select
+              value={selectedSectionId}
+              onChange={(event) => {
+                const section = sections.find((item) => item.id === event.target.value)
+                if (section) handleSelect(section)
+              }}
+            >
+              <option value="">{t('sections.title')}</option>
+              {sections.map((section) => (
+                <option value={section.id} key={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="choice-grid two-column">
+            {sections.map((section) => (
+              <button className="choice-card compact-choice" type="button" key={section.id} onClick={() => handleSelect(section)}>
+                <span aria-hidden="true">◈</span>
+                <strong>{section.name}</strong>
+                <small>{t('sections.select')}</small>
+              </button>
+            ))}
+          </div>
+        </>
       ) : (
         <p className="notice">{t('sections.empty')}</p>
       )}

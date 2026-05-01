@@ -15,9 +15,9 @@ function CategoriesPage({ categories, isLoading, onSelect, t }) {
         <div className="choice-grid">
           {categories.map((category) => (
             <button className="choice-card" type="button" key={category.id} onClick={() => onSelect(category)}>
-              {category.image_url ? <img src={category.image_url} alt="" /> : <span aria-hidden="true">◆</span>}
+              <span aria-hidden="true">◆</span>
               <strong>{category.name}</strong>
-              <small>{category.description || t('categories.fallback')}</small>
+              <small>{t('categories.fallback')}</small>
               <b>{t('categories.select')}</b>
             </button>
           ))}

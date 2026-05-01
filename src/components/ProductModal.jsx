@@ -5,9 +5,6 @@ import { getProductImages, money } from '../utils/store'
 function ProductModal({ product, quantity, setQuantity, onClose, onAddToCart, t }) {
   const images = getProductImages(product)
   const primaryImage = images[0] || ''
-  const categoryName = product.category_name || product.categories?.name
-  const typeName = product.type_name || product.product_types?.name || product.type
-  const sectionName = product.section_name || product.sections?.name
   const [activeImage, setActiveImage] = useState(primaryImage)
 
   useEffect(() => {
@@ -65,10 +62,10 @@ function ProductModal({ product, quantity, setQuantity, onClose, onAddToCart, t 
           )}
         </div>
         <div className="modal-content">
-          <p className="eyebrow">{[categoryName, typeName, sectionName].filter(Boolean).join(' / ') || t('products.details')}</p>
+          <p className="eyebrow">{t('products.details')}</p>
           <h2>{product.name}</h2>
           <strong className="modal-price">{money(product.price)}</strong>
-          <p>{product.description || product.preview_description || t('products.descriptionFallback')}</p>
+          <p>{product.description || t('products.descriptionFallback')}</p>
           {product.weight && (
             <div className="detail-box">
               <span>{t('products.weight')}</span>
