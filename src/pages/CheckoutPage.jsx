@@ -1,5 +1,5 @@
+import OrderSummaryTable from '../components/OrderSummaryTable'
 import PageIntro from '../components/PageIntro'
-import { getPriceAmount, money } from '../utils/store'
 
 function CheckoutPage({ checkout, setCheckout, cart, cartTotal, isSubmitting, onSubmit, t }) {
   return (
@@ -45,20 +45,7 @@ function CheckoutPage({ checkout, setCheckout, cart, cartTotal, isSubmitting, on
 
         <aside className="summary-card">
           <h2>{t('checkout.summary')}</h2>
-          <div className="summary-list">
-            {cart.map((item) => (
-              <div key={item.id}>
-                <span>
-                  {item.name} × {item.quantity}
-                </span>
-                <strong>{money(getPriceAmount(item.price) * item.quantity)}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="total-row">
-            <span>{t('cart.total')}</span>
-            <strong>{money(cartTotal)}</strong>
-          </div>
+          <OrderSummaryTable items={cart} total={cartTotal} t={t} />
         </aside>
       </section>
     </>

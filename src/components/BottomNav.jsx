@@ -1,19 +1,19 @@
 function BottomNav({ active, cartCount, onNavigate, t }) {
   const items = [
-    { key: 'categories', label: t('nav.home'), icon: '⌂' },
-    { key: 'cart', label: t('nav.cart'), icon: '◌', badge: cartCount },
-    { key: 'orders', label: t('nav.orders'), icon: '✓' },
-    { key: 'allProducts', label: t('nav.all'), icon: '▦' },
+    { path: '/', label: t('nav.home'), icon: '⌂' },
+    { path: '/cart', label: t('nav.cart'), icon: '◌', badge: cartCount },
+    { path: '/orders', label: t('nav.orders'), icon: '✓' },
+    { path: '/all-products', label: t('nav.all'), icon: '▦' },
   ]
 
   return (
     <nav className="bottom-nav" aria-label={t('app.menu')}>
       {items.map((item) => (
         <button
-          className={active === item.key ? 'is-active' : ''}
+          className={active === item.path ? 'is-active' : ''}
           type="button"
-          key={item.key}
-          onClick={() => onNavigate(item.key)}
+          key={item.path}
+          onClick={() => onNavigate(item.path)}
         >
           <span aria-hidden="true">{item.icon}</span>
           <small>{item.label}</small>

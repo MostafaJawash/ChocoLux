@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import BackButton from './components/BackButton'
 import BottomNav from './components/BottomNav'
 import ProductModal from './components/ProductModal'
 import CartPage from './pages/CartPage'
@@ -59,7 +58,34 @@ const demoProducts = [
 ]
 
 const productColumns = 'id, name, price, description, weight, images, category_id, type_id, section_id'
-const orderColumns = 'id, customer_name, phone, address, notes, status, total_amount, created_at, order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price)'
+const orderColumns =
+  'id, customer_name, phone, address, notes, status, total_amount, created_at, order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price)'
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+const getRoute = () => {
+  const pathname = window.location.pathname.replace(basePath, '') || '/'
+  return {
+    pathname: pathname === '' ? '/' : pathname,
+    search: new URLSearchParams(window.location.search),
+  }
+}
+
+const getInitialRoute = () => {
+  const redirect = new URLSearchParams(window.location.search).get('redirect')
+  if (redirect) window.history.replaceState({}, '', makeUrl(redirect))
+
+  return getRoute()
+}
+
+const makeUrl = (path, params = {}) => {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value)
+  })
+
+  return `${basePath}${path}${query.toString() ? `?${query}` : ''}`
+}
 
 const ensureUserId = () => {
   const existingUserId = localStorage.getItem(USER_ID_STORAGE_KEY)
@@ -73,16 +99,13 @@ const ensureUserId = () => {
 
 function App() {
   const [language, setLanguage] = useState(getInitialLanguage)
-  const [step, setStep] = useState('categories')
+  const [route, setRoute] = useState(getInitialRoute)
   const [categories, setCategories] = useState([])
   const [productTypes, setProductTypes] = useState([])
   const [sections, setSections] = useState([])
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
   const [allOrders, setAllOrders] = useState([])
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const [selectedType, setSelectedType] = useState(null)
-  const [selectedSection, setSelectedSection] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [modalQuantity, setModalQuantity] = useState(1)
   const [checkout, setCheckout] = useState(initialCheckout)
@@ -90,7 +113,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isOrdersLoading, setIsOrdersLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [error, setError] = useState('')
   const [ordersPhone, setOrdersPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
   const [cart, setCart] = useState(() => {
@@ -103,6 +126,20 @@ function App() {
 
   const isArabic = language === 'ar'
   const t = useCallback((key, values) => translate(language, key, values), [language])
+
+  const navigate = useCallback((path, params = {}) => {
+    const url = makeUrl(path, params)
+    window.history.pushState({}, '', url)
+    setRoute(getRoute())
+    setIsDrawerOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    const handlePopState = () => setRoute(getRoute())
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
@@ -141,6 +178,7 @@ function App() {
           supabase.from('sections').select('id, name, type_id').order('name'),
           supabase.from('products').select(productColumns),
         ])
+
         if (categoriesResult.error) throw categoriesResult.error
         if (typesResult.error) throw typesResult.error
         if (sectionsResult.error) throw sectionsResult.error
@@ -166,53 +204,36 @@ function App() {
     [cart],
   )
 
+  const categoryId = route.search.get('category_id') || ''
+  const typeId = route.search.get('type_id') || ''
+  const sectionId = route.search.get('section_id') || ''
+  const orderId = route.search.get('order_id') || ''
+
   const relatedTypes = useMemo(() => {
-    if (!selectedCategory) return productTypes
-    const ids = new Set(products.filter((product) => product.category_id === selectedCategory.id).map((product) => product.type_id))
+    if (!categoryId) return productTypes
+    const ids = new Set(products.filter((product) => product.category_id === categoryId).map((product) => product.type_id))
     const filtered = productTypes.filter((type) => ids.has(type.id))
-
     return filtered.length ? filtered : productTypes
-  }, [productTypes, products, selectedCategory])
+  }, [categoryId, productTypes, products])
 
-  const relatedSections = useMemo(() => {
-    if (!selectedType) return []
-    return sections.filter((section) => section.type_id === selectedType.id)
-  }, [sections, selectedType])
+  const relatedSections = useMemo(
+    () => sections.filter((section) => !typeId || section.type_id === typeId),
+    [sections, typeId],
+  )
 
   const filteredProducts = useMemo(() => {
-    if (step === 'allProducts') return products
+    if (route.pathname === '/all-products') return products
 
     return products.filter((product) => {
-      const categoryMatches = !selectedCategory || product.category_id === selectedCategory.id
-      const typeMatches = !selectedType || product.type_id === selectedType.id
-      const sectionMatches = !selectedSection || product.section_id === selectedSection.id
+      const categoryMatches = !categoryId || product.category_id === categoryId
+      const typeMatches = !typeId || product.type_id === typeId
+      const sectionMatches = !sectionId || product.section_id === sectionId
 
       return categoryMatches && typeMatches && sectionMatches
     })
-  }, [products, selectedCategory, selectedSection, selectedType, step])
+  }, [categoryId, products, route.pathname, sectionId, typeId])
 
-  const productTitle = step === 'allProducts' ? t('products.allTitle') : selectedSection?.name || selectedType?.name || t('products.allTitle')
-
-  const goHome = () => {
-    setSelectedCategory(null)
-    setSelectedType(null)
-    setSelectedSection(null)
-    setSelectedProduct(null)
-    setSuccessOrder(null)
-    setIsMenuOpen(false)
-    setStep('categories')
-  }
-
-  const navigateBack = () => {
-    if (step === 'types') setStep('categories')
-    if (step === 'sections') setStep('types')
-    if (step === 'products') setStep('sections')
-    if (step === 'allProducts') setStep('categories')
-    if (step === 'cart') setStep('categories')
-    if (step === 'checkout') setStep('cart')
-    if (step === 'success') setStep('orders')
-    if (step === 'orders' || step === 'admin') setStep('categories')
-  }
+  const productTitle = route.pathname === '/all-products' ? t('products.allTitle') : t('products.filteredTitle')
 
   const addToCart = useCallback((product, quantity = 1) => {
     setCart((items) => {
@@ -248,15 +269,6 @@ function App() {
     )
   }
 
-  const removeFromCart = (productId) => {
-    setCart((items) => items.filter((item) => item.id !== productId))
-  }
-
-  const openProduct = (product) => {
-    setModalQuantity(1)
-    setSelectedProduct(product)
-  }
-
   const fetchOrders = useCallback(async (admin = false, phoneOverride = '') => {
     if (!isSupabaseConfigured) return
 
@@ -264,10 +276,7 @@ function App() {
     setError('')
 
     try {
-      let query = supabase
-        .from('orders')
-        .select(orderColumns)
-        .order('created_at', { ascending: false })
+      let query = supabase.from('orders').select(orderColumns).order('created_at', { ascending: false })
 
       if (!admin) {
         const phone = (phoneOverride || ordersPhone).trim()
@@ -290,6 +299,15 @@ function App() {
       setIsOrdersLoading(false)
     }
   }, [ordersPhone, t])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (route.pathname === '/orders') fetchOrders(false)
+      if (route.pathname === '/admin-orders') fetchOrders(true)
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [fetchOrders, route.pathname])
 
   const submitOrder = async (event) => {
     event.preventDefault()
@@ -328,13 +346,14 @@ function App() {
         id: orderResult.data.id,
         items: cart,
         total: cartTotal,
-        customer: checkout,
+        status: 'pending',
+        created_at: orderResult.data.created_at,
       })
       setCart([])
       setCheckout(initialCheckout)
       setOrdersPhone(checkout.phone)
       await fetchOrders(false, checkout.phone)
-      setStep('success')
+      navigate('/orders', { order_id: orderResult.data.id })
     } catch (submitError) {
       setError(submitError.message || t('app.submitError'))
     } finally {
@@ -342,207 +361,215 @@ function App() {
     }
   }
 
-  const handleBottomNavigate = (target) => {
-    setIsMenuOpen(false)
-    if (target === 'categories') goHome()
-    if (target === 'cart') setStep('cart')
-    if (target === 'orders') {
-      fetchOrders(false)
-      setStep('orders')
+  const navItems = [
+    { path: '/', label: t('nav.home'), active: route.pathname === '/' },
+    { path: '/cart', label: `${t('nav.cart')} (${cartCount})`, active: route.pathname === '/cart' },
+    { path: '/orders', label: t('nav.orders'), active: route.pathname === '/orders' },
+    { path: '/all-products', label: t('nav.all'), active: route.pathname === '/all-products' },
+    { path: '/admin-orders', label: t('app.admin'), active: route.pathname === '/admin-orders' },
+  ]
+
+  const renderPage = () => {
+    if (route.pathname === '/') {
+      return (
+        <CategoriesPage
+          categories={categories}
+          isLoading={isLoading}
+          t={t}
+          onSelect={(category) => navigate('/types', { category_id: category.id })}
+        />
+      )
     }
-    if (target === 'allProducts') {
-      setSelectedCategory(null)
-      setSelectedType(null)
-      setSelectedSection(null)
-      setStep('allProducts')
+
+    if (route.pathname === '/types') {
+      return (
+        <ProductTypesPage
+          productTypes={relatedTypes}
+          isLoading={isLoading}
+          t={t}
+          onSelect={(type) => {
+            sessionStorage.setItem('uncle-bondq-category-id', categoryId)
+            navigate('/sections', { type_id: type.id })
+          }}
+        />
+      )
     }
+
+    if (route.pathname === '/sections') {
+      return (
+        <SectionsPage
+          sections={relatedSections}
+          isLoading={isLoading}
+          t={t}
+          onSelect={(section) =>
+            navigate('/products', {
+              category_id: categoryId || sessionStorage.getItem('uncle-bondq-category-id') || '',
+              type_id: typeId,
+              section_id: section.id,
+            })
+          }
+        />
+      )
+    }
+
+    if (route.pathname === '/products' || route.pathname === '/all-products') {
+      return (
+        <ProductsPage
+          title={productTitle}
+          products={filteredProducts}
+          isLoading={isLoading}
+          cartCount={cartCount}
+          onOpenProduct={(product) => {
+            setModalQuantity(1)
+            setSelectedProduct(product)
+          }}
+          onAddToCart={addToCart}
+          onViewCart={() => navigate('/cart')}
+          t={t}
+        />
+      )
+    }
+
+    if (route.pathname === '/cart') {
+      return (
+        <CartPage
+          cart={cart}
+          t={t}
+          cartTotal={cartTotal}
+          onDecrease={(id) => updateQuantity(id, -1)}
+          onIncrease={(id) => updateQuantity(id, 1)}
+          onRemove={(id) => setCart((items) => items.filter((item) => item.id !== id))}
+          onCheckout={() => navigate('/checkout')}
+          onContinue={() => navigate('/')}
+        />
+      )
+    }
+
+    if (route.pathname === '/checkout') {
+      return (
+        <CheckoutPage
+          checkout={checkout}
+          t={t}
+          setCheckout={setCheckout}
+          cart={cart}
+          cartTotal={cartTotal}
+          isSubmitting={isSubmitting}
+          onSubmit={submitOrder}
+        />
+      )
+    }
+
+    if (route.pathname === '/orders') {
+      return (
+        <OrdersPage
+          orders={orders}
+          selectedOrderId={orderId}
+          isLoading={isOrdersLoading}
+          language={language}
+          phone={ordersPhone}
+          onPhoneChange={setOrdersPhone}
+          onRefresh={() => fetchOrders(false)}
+          onOpenOrder={(id) => navigate('/orders', { order_id: id })}
+          t={t}
+        />
+      )
+    }
+
+    if (route.pathname === '/admin-orders') {
+      return (
+        <OrdersPage
+          orders={allOrders}
+          selectedOrderId={orderId}
+          isLoading={isOrdersLoading}
+          isAdmin
+          language={language}
+          onRefresh={() => fetchOrders(true)}
+          onOpenOrder={(id) => navigate('/admin-orders', { order_id: id })}
+          t={t}
+        />
+      )
+    }
+
+    return (
+      <SuccessPage
+        order={successOrder || { id: '', items: [], total: 0 }}
+        t={t}
+        onHome={() => navigate('/')}
+      />
+    )
   }
 
-  const activeNav = ['types', 'sections', 'products', 'categories'].includes(step) ? 'categories' : step
-
   return (
-    <main className="store-shell" data-language={language}>
-      <header className="topbar">
-        <button className="brand-mark" type="button" onClick={goHome}>
-          <span className="brand-icon" aria-hidden="true">◆</span>
-          {t('app.brand')}
+    <main className="app-layout" data-language={language}>
+      <aside className="sidebar">
+        <button className="brand-link" type="button" onClick={() => navigate('/')}>
+          <img src={`${basePath}/favicon.png`} alt="" />
+          <span>{t('app.brand')}</span>
         </button>
-        <button
-          className="menu-toggle"
-          type="button"
-          aria-expanded={isMenuOpen}
-          aria-label={t('app.menu')}
-          onClick={() => setIsMenuOpen((open) => !open)}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-        <nav className={isMenuOpen ? 'topnav is-open' : 'topnav'} aria-label={t('app.menu')}>
-          {step !== 'categories' && <BackButton onClick={navigateBack} t={t} />}
-          <button className="nav-button primary-nav" type="button" onClick={goHome}>
-            {t('app.home')}
-          </button>
-          <button className="nav-button primary-nav" type="button" onClick={() => setStep('cart')}>
-            {t('app.cart')} ({cartCount})
-          </button>
-          <button
-            className="nav-button primary-nav"
-            type="button"
-            onClick={() => {
-              fetchOrders(false)
-              setStep('orders')
-            }}
-          >
-            {t('app.orders')}
-          </button>
-          <button
-            className="nav-button primary-nav"
-            type="button"
-            onClick={() => {
-              setSelectedCategory(null)
-              setSelectedType(null)
-              setSelectedSection(null)
-              setStep('allProducts')
-            }}
-          >
-            {t('app.allProducts')}
-          </button>
-          <button
-            className="nav-button"
-            type="button"
-            onClick={() => {
-              fetchOrders(true)
-              setStep('admin')
-            }}
-          >
-            {t('app.admin')}
-          </button>
-          <button
-            className="language-toggle"
-            type="button"
-            onClick={() => setLanguage((current) => (current === 'ar' ? 'en' : 'ar'))}
-          >
-            {isArabic ? t('app.languageEnglish') : t('app.languageArabic')}
-          </button>
+        <nav>
+          {navItems.map((item) => (
+            <button
+              className={item.active ? 'is-active' : ''}
+              type="button"
+              key={item.path}
+              onClick={() => navigate(item.path)}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
+        <button className="language-link" type="button" onClick={() => setLanguage((current) => (current === 'ar' ? 'en' : 'ar'))}>
+          {isArabic ? t('app.languageEnglish') : t('app.languageArabic')}
+        </button>
+      </aside>
+
+      <header className="mobile-header">
+        <button className="drawer-toggle" type="button" onClick={() => setIsDrawerOpen(true)} aria-label={t('app.menu')}>
+          ☰
+        </button>
+        <button className="brand-link" type="button" onClick={() => navigate('/')}>
+          <img src={`${basePath}/favicon.png`} alt="" />
+          <span>{t('app.brand')}</span>
+        </button>
       </header>
 
-      {error && <p className="notice notice-error">{error}</p>}
+      {isDrawerOpen && (
+        <div className="drawer-layer" onClick={() => setIsDrawerOpen(false)}>
+          <aside className="mobile-drawer" onClick={(event) => event.stopPropagation()}>
+            <button className="brand-link" type="button" onClick={() => navigate('/')}>
+              <img src={`${basePath}/favicon.png`} alt="" />
+              <span>{t('app.brand')}</span>
+            </button>
+            {navItems.map((item) => (
+              <button
+                className={item.active ? 'is-active' : ''}
+                type="button"
+                key={item.path}
+                onClick={() => navigate(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </aside>
+        </div>
+      )}
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-        >
-          {step === 'categories' && (
-            <CategoriesPage
-              categories={categories}
-              isLoading={isLoading}
-              t={t}
-              onSelect={(category) => {
-                setSelectedCategory(category)
-                setSelectedType(null)
-                setSelectedSection(null)
-                setStep('types')
-              }}
-            />
-          )}
+      <section className="content-shell">
+        {error && <p className="notice notice-error">{error}</p>}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${route.pathname}${route.search.toString()}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+          >
+            {renderPage()}
+          </motion.div>
+        </AnimatePresence>
+      </section>
 
-          {step === 'types' && (
-            <ProductTypesPage
-              productTypes={relatedTypes}
-              isLoading={isLoading}
-              t={t}
-              onSelect={(type) => {
-                setSelectedType(type)
-                setSelectedSection(null)
-                setStep('sections')
-              }}
-            />
-          )}
-
-          {step === 'sections' && (
-            <SectionsPage
-              sections={relatedSections}
-              isLoading={isLoading}
-              t={t}
-              onSelect={(section) => {
-                setSelectedSection(section)
-                setStep('products')
-              }}
-            />
-          )}
-
-          {(step === 'products' || step === 'allProducts') && (
-            <ProductsPage
-              title={productTitle}
-              products={filteredProducts}
-              isLoading={isLoading}
-              cartCount={cartCount}
-              onOpenProduct={openProduct}
-              onAddToCart={addToCart}
-              onViewCart={() => setStep('cart')}
-              t={t}
-            />
-          )}
-
-          {step === 'cart' && (
-            <CartPage
-              cart={cart}
-              t={t}
-              cartTotal={cartTotal}
-              onDecrease={(id) => updateQuantity(id, -1)}
-              onIncrease={(id) => updateQuantity(id, 1)}
-              onRemove={removeFromCart}
-              onCheckout={() => setStep('checkout')}
-              onContinue={goHome}
-            />
-          )}
-
-          {step === 'checkout' && (
-            <CheckoutPage
-              checkout={checkout}
-              t={t}
-              setCheckout={setCheckout}
-              cart={cart}
-              cartTotal={cartTotal}
-              isSubmitting={isSubmitting}
-              onSubmit={submitOrder}
-            />
-          )}
-
-          {step === 'success' && successOrder && <SuccessPage order={successOrder} t={t} onHome={goHome} />}
-
-          {step === 'orders' && (
-            <OrdersPage
-              orders={orders}
-              isLoading={isOrdersLoading}
-              language={language}
-              phone={ordersPhone}
-              onPhoneChange={setOrdersPhone}
-              onRefresh={() => fetchOrders(false)}
-              t={t}
-            />
-          )}
-
-          {step === 'admin' && (
-            <OrdersPage
-              orders={allOrders}
-              isLoading={isOrdersLoading}
-              isAdmin
-              language={language}
-              onRefresh={() => fetchOrders(true)}
-              t={t}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      <BottomNav active={activeNav} cartCount={cartCount} onNavigate={handleBottomNavigate} t={t} />
+      <BottomNav active={route.pathname} cartCount={cartCount} onNavigate={navigate} t={t} />
 
       <AnimatePresence>
         {selectedProduct && (

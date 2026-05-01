@@ -20,6 +20,16 @@
     "orders": "Orders",
     "all": "Products"
   },
+  "search": {
+    "label": "Search",
+    "placeholder": "Search categories",
+    "products": "Search products"
+  },
+  "summary": {
+    "product": "Product",
+    "qty": "Qty",
+    "price": "Price"
+  },
   "steps": {
     "categories": "Categories",
     "types": "Product Types",
@@ -53,7 +63,7 @@
   "products": {
     "title": "{{scope}}",
     "allTitle": "All products",
-    "filteredTitle": "{{section}}",
+    "filteredTitle": "Products",
     "copy": "Choose a product and add it to cart. Prices are in Syrian pounds.",
     "count": "{{count}} products",
     "viewCart": "View Cart ({{count}})",
@@ -103,6 +113,7 @@
     "empty": "No orders yet.",
     "refresh": "Refresh",
     "phoneFilter": "Phone number for orders",
+    "details": "Order details",
     "items": "Items",
     "phone": "Phone",
     "address": "Address",

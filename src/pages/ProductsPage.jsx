@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import PageIntro from '../components/PageIntro'
 import ProductCard from '../components/ProductCard'
 
@@ -11,6 +12,19 @@ function ProductsPage({
   onViewCart,
   t,
 }) {
+  const [search, setSearch] = useState('')
+  const visibleProducts = useMemo(
+    () =>
+      products.filter((product) =>
+        [product.name, product.description, product.weight]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(search.trim().toLowerCase()),
+      ),
+    [products, search],
+  )
+
   return (
     <>
       <PageIntro
@@ -20,12 +34,17 @@ function ProductsPage({
       />
 
       <div className="page-toolbar">
-        <span>{t('products.count', { count: products.length })}</span>
+        <span>{t('products.count', { count: visibleProducts.length })}</span>
         <button className="secondary-button" type="button" onClick={onViewCart}>
           <span aria-hidden="true">◌</span>
           {t('products.viewCart', { count: cartCount })}
         </button>
       </div>
+
+      <label className="search-field">
+        {t('search.label')}
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('search.products')} />
+      </label>
 
       {isLoading ? (
         <div className="product-grid">
@@ -33,9 +52,9 @@ function ProductsPage({
             <div className="product-card skeleton" key={index} />
           ))}
         </div>
-      ) : products.length ? (
+      ) : visibleProducts.length ? (
         <div className="product-grid">
-          {products.map((product) => (
+          {visibleProducts.map((product) => (
             <ProductCard
               product={product}
               key={product.id}

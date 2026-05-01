@@ -1,9 +1,21 @@
+import { useMemo, useState } from 'react'
 import PageIntro from '../components/PageIntro'
 
 function CategoriesPage({ categories, isLoading, onSelect, t }) {
+  const [search, setSearch] = useState('')
+  const visibleCategories = useMemo(
+    () => categories.filter((category) => category.name.toLowerCase().includes(search.trim().toLowerCase())),
+    [categories, search],
+  )
+
   return (
     <>
       <PageIntro eyebrow={t('steps.categories')} title={t('categories.title')} copy={t('categories.copy')} />
+
+      <label className="search-field">
+        {t('search.label')}
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('search.placeholder')} />
+      </label>
 
       {isLoading ? (
         <div className="choice-grid">
@@ -11,14 +23,13 @@ function CategoriesPage({ categories, isLoading, onSelect, t }) {
             <div className="choice-card skeleton" key={index} />
           ))}
         </div>
-      ) : categories.length ? (
+      ) : visibleCategories.length ? (
         <div className="choice-grid">
-          {categories.map((category) => (
+          {visibleCategories.map((category) => (
             <button className="choice-card" type="button" key={category.id} onClick={() => onSelect(category)}>
               <span aria-hidden="true">◆</span>
               <strong>{category.name}</strong>
               <small>{t('categories.fallback')}</small>
-              <b>{t('categories.select')}</b>
             </button>
           ))}
         </div>

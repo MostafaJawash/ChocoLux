@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uncle Bondq</title>
+    <script>
+      var base = '/ChocoLux'
+      var path = location.pathname.replace(base, '') || '/'
+      location.replace(base + '/?redirect=' + encodeURIComponent(path + location.search))
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -20,6 +20,16 @@
     "orders": "طلباتي",
     "all": "المنتجات"
   },
+  "search": {
+    "label": "بحث",
+    "placeholder": "ابحث في التصنيفات",
+    "products": "ابحث في المنتجات"
+  },
+  "summary": {
+    "product": "المنتج",
+    "qty": "الكمية",
+    "price": "السعر"
+  },
   "steps": {
     "categories": "التصنيفات",
     "types": "أنواع المنتجات",
@@ -53,7 +63,7 @@
   "products": {
     "title": "{{scope}}",
     "allTitle": "كل المنتجات",
-    "filteredTitle": "{{section}}",
+    "filteredTitle": "المنتجات",
     "copy": "اختر المنتج وأضفه إلى السلة. الأسعار بالليرة السورية.",
     "count": "{{count}} منتج",
     "viewCart": "عرض السلة ({{count}})",
@@ -103,6 +113,7 @@
     "empty": "لا توجد طلبات بعد.",
     "refresh": "تحديث",
     "phoneFilter": "رقم الهاتف لعرض الطلبات",
+    "details": "تفاصيل الطلب",
     "items": "المنتجات",
     "phone": "الهاتف",
     "address": "العنوان",
