@@ -45,45 +45,14 @@ export const syncUserProfile = async (userId, fullName, phone) => {
       id: userId,
       full_name: fullNameTrimmed,
       phone: phoneInt,
-      updated_at: new Date().toISOString(),
     }
 
-    // First, check if profile exists
-    const { data: existingProfile, error: checkError } = await supabase
+    // Try upsert - insert if new, update if exists
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('id', userId)
+      .upsert([profileData])
+      .select()
       .single()
-
-    let result
-
-    if (checkError && checkError.code === 'PGRST116') {
-      // Profile doesn't exist - insert new one
-      console.log('Creating new profile...')
-      result = await supabase
-        .from('profiles')
-        .insert([profileData])
-        .select()
-        .single()
-    } else if (existingProfile) {
-      // Profile exists - update it
-      console.log('Updating existing profile...')
-      result = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullNameTrimmed,
-          phone: phoneInt,
-          updated_at: profileData.updated_at,
-        })
-        .eq('id', userId)
-        .select()
-        .single()
-    } else if (checkError) {
-      // Some other error occurred
-      throw checkError
-    }
-
-    const { data, error } = result
 
     if (error) {
       console.error('Supabase error:', error)
