@@ -20,6 +20,11 @@ function OrdersPage({
   onOpenOrder,
   t,
 }) {
+  const toAmount = (value) => {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
   if (!isLoggedIn) {
     return (
       <>
@@ -54,11 +59,15 @@ function OrdersPage({
         </div>
       ) : orders.length ? (
         <div className="orders-list">
-          {orders.map((order) => (
-            <article className="order-card" key={order.id}>
+          {orders.map((order) => {
+            const finalAmount = toAmount(order.final_amount)
+            const discountAmount = toAmount(order.discount_amount)
+
+            return (
+              <article className="order-card" key={order.id}>
               <header>
                 <div>
-                  <strong>{money(order.final_amount ?? order.total_amount)}</strong>
+                  <strong>{money(finalAmount ?? order.total_amount)}</strong>
                   <small>{t('orders.date')}: {formatDate(order.created_at, language)}</small>
                 </div>
                 <span>{t(`orders.status.${order.status || 'new'}`)}</span>
@@ -67,14 +76,17 @@ function OrdersPage({
               <div className="order-meta">
                 <p>{t('orders.phone')}: {order.phone}</p>
                 <p>{t('orders.address')}: {order.address}</p>
+                {discountAmount !== null && discountAmount > 0 && <p>الخصم: {money(discountAmount)}</p>}
+                {finalAmount !== null && <p>المبلغ النهائي: {money(finalAmount)}</p>}
                 {order.notes && <p>{t('orders.notes')}: {order.notes}</p>}
               </div>
 
               <button className="secondary-button details-button" type="button" onClick={() => onOpenOrder(order.id)}>
                 {t('orders.details')}
               </button>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </div>
       ) : (
         <p className="notice">{t('orders.empty')}</p>

@@ -11,6 +11,11 @@ const formatDate = (value, language) => {
 }
 
 function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
+  const finalAmount = Number(order?.final_amount)
+  const discountAmount = Number(order?.discount_amount)
+  const hasFinalAmount = Number.isFinite(finalAmount)
+  const hasDiscount = Number.isFinite(discountAmount) && discountAmount > 0
+
   return (
     <>
       <PageIntro eyebrow={t('steps.orderDetails')} title={t('orders.details')} copy={t('orders.detailsCopy')} />
@@ -28,6 +33,8 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
             <div>
               <h2>{t('orders.details')}</h2>
               <p>{t('orders.date')}: {formatDate(order.created_at, language)}</p>
+              {hasDiscount && <p>الخصم: {discountAmount.toLocaleString('ar-SY')} ل.س</p>}
+              {hasFinalAmount && <p>المبلغ النهائي: {finalAmount.toLocaleString('ar-SY')} ل.س</p>}
             </div>
             <span>{t(`orders.status.${order.status || 'new'}`)}</span>
           </header>
