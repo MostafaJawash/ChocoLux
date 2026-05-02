@@ -18,7 +18,8 @@
     "cart": "Cart",
     "orders": "Orders",
     "favorites": "Favorites",
-    "all": "Products"
+    "all": "Products",
+    "products": "Products"
   },
   "search": {
     "label": "Search",
@@ -41,18 +42,20 @@
     "orders": "My Orders",
     "orderDetails": "Order Details",
     "favorites": "Favorites",
-    "login": "Login"
+    "profile": "Profile"
   },
-  "login": {
-    "title": "Login",
-    "copy": "Enter your phone number only to save favorites and place orders.",
-    "submit": "Continue",
+  "profile": {
+    "title": "Profile",
+    "copy": "Enter your full name and phone to save favorites and view orders.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Enter full name",
+    "save": "Save",
     "logout": "Logout"
   },
   "favorites": {
     "title": "Favorites",
     "copy": "Products saved for your phone number.",
-    "loginCopy": "Login by phone to add products to favorites.",
+    "profileCopy": "Complete your profile to add products to favorites.",
     "empty": "No favorite products yet.",
     "toggle": "Add or remove favorite"
   },
@@ -131,10 +134,10 @@
     "copy": "These orders are fetched by phone number only.",
     "empty": "No orders yet.",
     "refresh": "Refresh",
-    "phoneFilter": "Phone number for orders",
     "details": "Order details",
     "detailsCopy": "Products, status, date, and total.",
     "notFound": "Order not found.",
+    "profileCopy": "Complete your profile to view your orders automatically.",
     "items": "Items",
     "phone": "Phone",
     "address": "Address",
@@ -143,6 +146,7 @@
     "status": {
       "new": "New",
       "pending": "Pending",
+      "processing": "Processing",
       "confirmed": "Confirmed",
       "delivered": "Delivered",
       "cancelled": "Cancelled"

@@ -11,7 +11,7 @@ import ProductTypesPage from './pages/ProductTypesPage'
 import ProductsPage from './pages/ProductsPage'
 import SectionsPage from './pages/SectionsPage'
 import SuccessPage from './pages/SuccessPage'
-import LoginPage from './pages/LoginPage'
+import ProfilePage from './pages/ProfilePage'
 import FavoritesPage from './pages/FavoritesPage'
 import OrderDetailsPage from './pages/OrderDetailsPage'
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY, translate } from './i18n'
@@ -21,9 +21,10 @@ import { getPriceAmount, getProductImages } from './utils/store'
 const CART_STORAGE_KEY = 'uncle-bondq-cart'
 const USER_ID_STORAGE_KEY = 'uncle-bondq-user-id'
 const PHONE_STORAGE_KEY = 'uncle-bondq-phone'
+const FULL_NAME_STORAGE_KEY = 'uncle-bondq-full-name'
 const FAVORITES_STORAGE_KEY = 'uncle-bondq-favorites'
 const COUPON_STORAGE_KEY = 'uncle-bondq-coupon'
-const initialCheckout = { phone: '', address: '', notes: '' }
+const initialCheckout = { full_name: '', phone: '', address: '', notes: '' }
 
 const demoCategories = [
   { id: 'demo-cat-1', name: 'شوكولا' },
@@ -120,6 +121,11 @@ const getCouponDiscount = (code, total) => {
   return 0
 }
 
+const getStoredProfile = () => ({
+  full_name: localStorage.getItem(FULL_NAME_STORAGE_KEY) || '',
+  phone: localStorage.getItem(PHONE_STORAGE_KEY) || '',
+})
+
 function App() {
   const [language, setLanguage] = useState(getInitialLanguage)
   const [route, setRoute] = useState(getInitialRoute)
@@ -132,7 +138,7 @@ function App() {
   const [modalQuantity, setModalQuantity] = useState(1)
   const [checkout, setCheckout] = useState(() => ({
     ...initialCheckout,
-    phone: localStorage.getItem(PHONE_STORAGE_KEY) || '',
+    ...getStoredProfile(),
   }))
   const [successOrder, setSuccessOrder] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -140,8 +146,8 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [error, setError] = useState('')
-  const [ordersPhone, setOrdersPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
-  const [loggedPhone, setLoggedPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
+  const [profile, setProfile] = useState(getStoredProfile)
+  const loggedPhone = profile.phone
   const [favoriteIds, setFavoriteIds] = useState(() => getStoredFavorites(localStorage.getItem(PHONE_STORAGE_KEY) || ''))
   const [couponCode, setCouponCode] = useState(() => localStorage.getItem(COUPON_STORAGE_KEY) || '')
   const [cart, setCart] = useState(() => {
@@ -156,6 +162,12 @@ function App() {
   const t = useCallback((key, values) => translate(language, key, values), [language])
 
   const navigate = useCallback((path, params = {}) => {
+    if (path === '/products' && !sessionStorage.getItem('uncle-bondq-products-filtered')) {
+      sessionStorage.removeItem('uncle-bondq-category-id')
+      sessionStorage.removeItem('uncle-bondq-type-id')
+      sessionStorage.removeItem('uncle-bondq-section-id')
+    }
+    sessionStorage.removeItem('uncle-bondq-products-filtered')
     const url = makeUrl(path, params)
     window.history.pushState({}, '', url)
     setRoute(getRoute())
@@ -187,13 +199,12 @@ function App() {
     const timeoutId = window.setTimeout(() => {
       setFavoriteIds(getStoredFavorites(loggedPhone))
       if (loggedPhone) {
-        setOrdersPhone(loggedPhone)
-        setCheckout((value) => ({ ...value, phone: loggedPhone }))
+        setCheckout((value) => ({ ...value, full_name: profile.full_name, phone: loggedPhone }))
       }
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [loggedPhone])
+  }, [loggedPhone, profile.full_name])
 
   useEffect(() => {
     localStorage.setItem(getFavoritesKey(loggedPhone), JSON.stringify(favoriteIds))
@@ -250,10 +261,10 @@ function App() {
   const couponDiscount = useMemo(() => getCouponDiscount(couponCode, cartTotal), [cartTotal, couponCode])
   const discountedTotal = Math.max(0, cartTotal - couponDiscount)
 
-  const categoryId = route.search.get('category_id') || ''
-  const typeId = route.search.get('type_id') || ''
-  const sectionId = route.search.get('section_id') || ''
-  const orderId = route.search.get('id') || ''
+  const categoryId = route.search.get('category_id') || sessionStorage.getItem('uncle-bondq-category-id') || ''
+  const typeId = route.search.get('type_id') || sessionStorage.getItem('uncle-bondq-type-id') || ''
+  const sectionId = route.search.get('section_id') || sessionStorage.getItem('uncle-bondq-section-id') || ''
+  const orderId = route.search.get('id') || sessionStorage.getItem('uncle-bondq-order-id') || ''
 
   const relatedTypes = useMemo(() => {
     if (!categoryId) return productTypes
@@ -268,8 +279,6 @@ function App() {
   )
 
   const filteredProducts = useMemo(() => {
-    if (route.pathname === '/all-products') return products
-
     return products.filter((product) => {
       const categoryMatches = !categoryId || product.category_id === categoryId
       const typeMatches = !typeId || product.type_id === typeId
@@ -277,9 +286,9 @@ function App() {
 
       return categoryMatches && typeMatches && sectionMatches
     })
-  }, [categoryId, products, route.pathname, sectionId, typeId])
+  }, [categoryId, products, sectionId, typeId])
 
-  const productTitle = route.pathname === '/all-products' ? t('products.allTitle') : t('products.filteredTitle')
+  const productTitle = categoryId || typeId || sectionId ? t('products.filteredTitle') : t('products.allTitle')
 
   const addToCart = useCallback((product, quantity = 1) => {
     setCart((items) => {
@@ -324,7 +333,7 @@ function App() {
     try {
       let query = supabase.from('orders').select(orderColumns).order('created_at', { ascending: false })
 
-      const phone = (phoneOverride || ordersPhone || loggedPhone).trim()
+      const phone = (phoneOverride || loggedPhone).trim()
       if (!phone) {
         setOrders([])
         setIsOrdersLoading(false)
@@ -341,7 +350,7 @@ function App() {
     } finally {
       setIsOrdersLoading(false)
     }
-  }, [loggedPhone, ordersPhone, t])
+  }, [loggedPhone, t])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -354,7 +363,7 @@ function App() {
   const submitOrder = async (event) => {
     event.preventDefault()
     if (!loggedPhone) {
-      navigate('/login', { redirect: '/checkout' })
+      navigate('/profile', { redirect: '/checkout' })
       return
     }
     if (!cart.length || !isSupabaseConfigured) return
@@ -365,7 +374,7 @@ function App() {
     try {
       ensureUserId()
       const orderPayload = {
-        customer_name: '',
+        customer_name: checkout.full_name || profile.full_name,
         phone: checkout.phone,
         address: checkout.address,
         notes: checkout.notes,
@@ -397,8 +406,7 @@ function App() {
       })
       setCart([])
       setCouponCode('')
-      setCheckout({ ...initialCheckout, phone: loggedPhone })
-      setOrdersPhone(checkout.phone)
+      setCheckout({ ...initialCheckout, full_name: profile.full_name, phone: loggedPhone })
       await fetchOrders(checkout.phone)
       navigate('/order-details', { id: orderResult.data.id })
     } catch (submitError) {
@@ -408,19 +416,22 @@ function App() {
     }
   }
 
-  const handleLogin = (phone) => {
-    const cleanPhone = phone.trim()
-    localStorage.setItem(PHONE_STORAGE_KEY, cleanPhone)
-    setLoggedPhone(cleanPhone)
-    setOrdersPhone(cleanPhone)
-    setCheckout((value) => ({ ...value, phone: cleanPhone }))
+  const handleProfileSave = (nextProfile) => {
+    const cleanProfile = {
+      full_name: nextProfile.full_name.trim(),
+      phone: nextProfile.phone.trim(),
+    }
+    localStorage.setItem(FULL_NAME_STORAGE_KEY, cleanProfile.full_name)
+    localStorage.setItem(PHONE_STORAGE_KEY, cleanProfile.phone)
+    setProfile(cleanProfile)
+    setCheckout((value) => ({ ...value, ...cleanProfile }))
     const redirect = route.search.get('redirect') || '/'
     navigate(redirect)
   }
 
   const toggleFavorite = (product) => {
     if (!loggedPhone) {
-      navigate('/login', { redirect: route.pathname })
+      navigate('/profile', { redirect: route.pathname })
       return
     }
 
@@ -442,8 +453,8 @@ function App() {
     { path: '/cart', label: `${t('nav.cart')} (${cartCount})`, active: route.pathname === '/cart' },
     { path: '/orders', label: t('nav.orders'), active: route.pathname === '/orders' },
     { path: '/favorites', label: t('nav.favorites'), active: route.pathname === '/favorites' },
-    { path: '/all-products', label: t('nav.all'), active: route.pathname === '/all-products' },
-    { path: '/login', label: loggedPhone || t('login.title'), active: route.pathname === '/login' },
+    { path: '/products', label: t('nav.products'), active: route.pathname === '/products' },
+    { path: '/profile', label: profile.full_name || t('profile.title'), active: route.pathname === '/profile' },
   ]
 
   const renderPage = () => {
@@ -456,7 +467,10 @@ function App() {
           isLoading={isLoading}
           cardImage={cardImage}
           t={t}
-          onSelect={(category) => navigate('/types', { category_id: category.id })}
+          onSelect={(category) => {
+            sessionStorage.setItem('uncle-bondq-category-id', category.id)
+            navigate('/types')
+          }}
         />
       )
     }
@@ -470,7 +484,8 @@ function App() {
           t={t}
           onSelect={(type) => {
             sessionStorage.setItem('uncle-bondq-category-id', categoryId)
-            navigate('/sections', { type_id: type.id })
+            sessionStorage.setItem('uncle-bondq-type-id', type.id)
+            navigate('/sections')
           }}
         />
       )
@@ -483,18 +498,16 @@ function App() {
           isLoading={isLoading}
           cardImage={cardImage}
           t={t}
-          onSelect={(section) =>
-            navigate('/products', {
-              category_id: categoryId || sessionStorage.getItem('uncle-bondq-category-id') || '',
-              type_id: typeId,
-              section_id: section.id,
-            })
-          }
+          onSelect={(section) => {
+            sessionStorage.setItem('uncle-bondq-section-id', section.id)
+            sessionStorage.setItem('uncle-bondq-products-filtered', '1')
+            navigate('/products')
+          }}
         />
       )
     }
 
-    if (route.pathname === '/products' || route.pathname === '/all-products') {
+    if (route.pathname === '/products') {
       return (
         <ProductsPage
           title={productTitle}
@@ -556,10 +569,13 @@ function App() {
           orders={orders}
           isLoading={isOrdersLoading}
           language={language}
-          phone={ordersPhone}
-          onPhoneChange={setOrdersPhone}
           onRefresh={() => fetchOrders()}
-          onOpenOrder={(id) => navigate('/order-details', { id })}
+          isLoggedIn={Boolean(loggedPhone)}
+          onProfile={() => navigate('/profile', { redirect: '/orders' })}
+          onOpenOrder={(id) => {
+            sessionStorage.setItem('uncle-bondq-order-id', id)
+            navigate('/order-details')
+          }}
           t={t}
         />
       )
@@ -585,7 +601,7 @@ function App() {
           products={favoriteProducts}
           favoriteIds={favoriteIds}
           isLoggedIn={Boolean(loggedPhone)}
-          onLogin={() => navigate('/login', { redirect: '/favorites' })}
+          onLogin={() => navigate('/profile', { redirect: '/favorites' })}
           onOpenProduct={(product) => {
             setModalQuantity(1)
             setSelectedProduct(product)
@@ -597,8 +613,8 @@ function App() {
       )
     }
 
-    if (route.pathname === '/login') {
-      return <LoginPage initialPhone={loggedPhone} onSubmit={handleLogin} t={t} />
+    if (route.pathname === '/profile') {
+      return <ProfilePage initialProfile={profile} onSubmit={handleProfileSave} t={t} />
     }
 
     return (
@@ -633,8 +649,8 @@ function App() {
           {isArabic ? t('app.languageEnglish') : t('app.languageArabic')}
         </button>
         {loggedPhone && (
-          <button className="language-link" type="button" onClick={() => handleLogin('')}>
-            {t('login.logout')}
+          <button className="language-link" type="button" onClick={() => handleProfileSave({ full_name: '', phone: '' })}>
+            {t('profile.logout')}
           </button>
         )}
       </aside>
@@ -667,8 +683,8 @@ function App() {
               </button>
             ))}
             {loggedPhone && (
-              <button type="button" onClick={() => handleLogin('')}>
-                {t('login.logout')}
+              <button type="button" onClick={() => handleProfileSave({ full_name: '', phone: '' })}>
+                {t('profile.logout')}
               </button>
             )}
           </aside>
@@ -689,6 +705,17 @@ function App() {
             {renderPage()}
           </motion.div>
         </AnimatePresence>
+        <footer className="site-footer">
+          <p>© Uncle Bondq - All rights reserved</p>
+          <div>
+            <a href="https://www.facebook.com/profile.php?id=61589280504896&mibextid=ZbWKwL" target="_blank" rel="noreferrer">
+              Facebook
+            </a>
+            <a href="https://www.instagram.com/uncle_bondq?igsh=MWJ5NzNxemZtbWQwdw==" target="_blank" rel="noreferrer">
+              Instagram
+            </a>
+          </div>
+        </footer>
       </section>
 
       <BottomNav active={route.pathname} cartCount={cartCount} onNavigate={navigate} t={t} />

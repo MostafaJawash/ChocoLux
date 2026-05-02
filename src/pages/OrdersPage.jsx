@@ -14,12 +14,23 @@ function OrdersPage({
   orders,
   isLoading,
   language,
-  phone = '',
-  onPhoneChange = () => {},
+  isLoggedIn,
+  onProfile,
   onRefresh,
   onOpenOrder,
   t,
 }) {
+  if (!isLoggedIn) {
+    return (
+      <>
+        <PageIntro eyebrow={t('steps.orders')} title={t('orders.title')} copy={t('orders.profileCopy')} />
+        <button className="primary-button narrow" type="button" onClick={onProfile}>
+          {t('profile.title')}
+        </button>
+      </>
+    )
+  }
+
   return (
     <>
       <PageIntro
@@ -34,15 +45,6 @@ function OrdersPage({
           ↻ {t('orders.refresh')}
         </button>
       </div>
-
-      <label className="phone-filter">
-        {t('orders.phoneFilter')}
-        <input
-          value={phone}
-          onChange={(event) => onPhoneChange(event.target.value)}
-          placeholder={t('checkout.phonePlaceholder')}
-        />
-      </label>
 
       {isLoading ? (
         <div className="orders-list">

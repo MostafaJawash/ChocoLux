@@ -1,8 +1,7 @@
 function BackButton({ onClick, t }) {
   return (
-    <button className="back-button" type="button" onClick={onClick}>
-      <span aria-hidden="true">‹</span>
-      {t('app.back')}
+    <button className="back-button icon-only" type="button" onClick={onClick} aria-label={t('app.back')}>
+      <span aria-hidden="true">←</span>
     </button>
   )
 }

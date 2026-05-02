@@ -29,7 +29,7 @@ function ProductCard({ product, isFavorite = false, onOpen, onAddToCart, onToggl
           onClick={() => onToggleFavorite(product)}
           aria-label={t('favorites.toggle')}
         >
-          ♥
+          {isFavorite ? '❤️' : '🤍'}
         </button>
       </div>
     </article>

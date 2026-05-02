@@ -14,9 +14,9 @@ function FavoritesPage({
   if (!isLoggedIn) {
     return (
       <>
-        <PageIntro eyebrow={t('steps.favorites')} title={t('favorites.title')} copy={t('favorites.loginCopy')} />
+        <PageIntro eyebrow={t('steps.favorites')} title={t('favorites.title')} copy={t('favorites.profileCopy')} />
         <button className="primary-button narrow" type="button" onClick={onLogin}>
-          {t('login.title')}
+          {t('profile.title')}
         </button>
       </>
     )
