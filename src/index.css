@@ -663,6 +663,22 @@ img {
   gap: 5px;
 }
 
+.order-price-breakdown {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf8f5;
+}
+
+.order-price-breakdown p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .details-button {
   width: fit-content;
 }
@@ -947,6 +963,11 @@ img {
   .checkout-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
     align-items: start;
+  }
+
+  .order-price-breakdown {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
 }
 

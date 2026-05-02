@@ -25,6 +25,16 @@ function OrdersPage({
     return Number.isFinite(parsed) ? parsed : null
   }
 
+  const renderPriceLine = (label, value) => {
+    if (value === null) return null
+
+    return (
+      <p>
+        {label}: {money(value)}
+      </p>
+    )
+  }
+
   if (!isLoggedIn) {
     return (
       <>
@@ -60,6 +70,7 @@ function OrdersPage({
       ) : orders.length ? (
         <div className="orders-list">
           {orders.map((order) => {
+            const totalAmount = toAmount(order.total_amount)
             const finalAmount = toAmount(order.final_amount)
             const discountAmount = toAmount(order.discount_amount)
 
@@ -76,8 +87,11 @@ function OrdersPage({
               <div className="order-meta">
                 <p>{t('orders.phone')}: {order.phone}</p>
                 <p>{t('orders.address')}: {order.address}</p>
-                {discountAmount !== null && discountAmount > 0 && <p>الخصم: {money(discountAmount)}</p>}
-                {finalAmount !== null && <p>المبلغ النهائي: {money(finalAmount)}</p>}
+                <div className="order-price-breakdown">
+                  {renderPriceLine('السعر الكلي', totalAmount)}
+                  {discountAmount !== null && discountAmount > 0 && renderPriceLine('الخصم', discountAmount)}
+                  {renderPriceLine('السعر بعد الخصم', finalAmount)}
+                </div>
                 {order.notes && <p>{t('orders.notes')}: {order.notes}</p>}
               </div>
 

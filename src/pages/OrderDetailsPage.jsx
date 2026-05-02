@@ -1,5 +1,6 @@
 import OrderSummaryTable from '../components/OrderSummaryTable'
 import PageIntro from '../components/PageIntro'
+import { money } from '../utils/store'
 
 const formatDate = (value, language) => {
   if (!value) return ''
@@ -11,8 +12,10 @@ const formatDate = (value, language) => {
 }
 
 function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
+  const totalAmount = Number(order?.total_amount)
   const finalAmount = Number(order?.final_amount)
   const discountAmount = Number(order?.discount_amount)
+  const hasTotalAmount = Number.isFinite(totalAmount)
   const hasFinalAmount = Number.isFinite(finalAmount)
   const hasDiscount = Number.isFinite(discountAmount) && discountAmount > 0
 
@@ -33,8 +36,11 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
             <div>
               <h2>{t('orders.details')}</h2>
               <p>{t('orders.date')}: {formatDate(order.created_at, language)}</p>
-              {hasDiscount && <p>الخصم: {discountAmount.toLocaleString('ar-SY')} ل.س</p>}
-              {hasFinalAmount && <p>المبلغ النهائي: {finalAmount.toLocaleString('ar-SY')} ل.س</p>}
+              <div className="order-price-breakdown">
+                {hasTotalAmount && <p>السعر الكلي: {money(totalAmount)}</p>}
+                {hasDiscount && <p>الخصم: {money(discountAmount)}</p>}
+                {hasFinalAmount && <p>السعر بعد الخصم: {money(finalAmount)}</p>}
+              </div>
             </div>
             <span>{t(`orders.status.${order.status || 'new'}`)}</span>
           </header>
