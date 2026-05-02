@@ -1,4 +1,3 @@
-import OrderSummaryTable from '../components/OrderSummaryTable'
 import PageIntro from '../components/PageIntro'
 import { money } from '../utils/store'
 
@@ -13,9 +12,7 @@ const formatDate = (value, language) => {
 
 function OrdersPage({
   orders,
-  selectedOrderId,
   isLoading,
-  isAdmin = false,
   language,
   phone = '',
   onPhoneChange = () => {},
@@ -23,14 +20,12 @@ function OrdersPage({
   onOpenOrder,
   t,
 }) {
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId)
-
   return (
     <>
       <PageIntro
-        eyebrow={isAdmin ? t('steps.admin') : t('steps.orders')}
-        title={isAdmin ? t('orders.adminTitle') : t('orders.title')}
-        copy={isAdmin ? t('orders.adminCopy') : t('orders.copy')}
+        eyebrow={t('steps.orders')}
+        title={t('orders.title')}
+        copy={t('orders.copy')}
       />
 
       <div className="page-toolbar">
@@ -40,33 +35,14 @@ function OrdersPage({
         </button>
       </div>
 
-      {!isAdmin && (
-        <label className="phone-filter">
-          {t('orders.phoneFilter')}
-          <input
-            value={phone}
-            onChange={(event) => onPhoneChange(event.target.value)}
-            placeholder={t('checkout.phonePlaceholder')}
-          />
-        </label>
-      )}
-
-      {selectedOrder && (
-        <article className="order-details">
-          <header>
-            <div>
-              <h2>{t('orders.details')}</h2>
-              <p>{t('orders.date')}: {formatDate(selectedOrder.created_at, language)}</p>
-            </div>
-            <span>{t(`orders.status.${selectedOrder.status || 'new'}`)}</span>
-          </header>
-          <OrderSummaryTable
-            items={selectedOrder.order_items || []}
-            total={selectedOrder.total_amount}
-            t={t}
-          />
-        </article>
-      )}
+      <label className="phone-filter">
+        {t('orders.phoneFilter')}
+        <input
+          value={phone}
+          onChange={(event) => onPhoneChange(event.target.value)}
+          placeholder={t('checkout.phonePlaceholder')}
+        />
+      </label>
 
       {isLoading ? (
         <div className="orders-list">

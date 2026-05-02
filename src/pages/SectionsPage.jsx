@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import PageIntro from '../components/PageIntro'
 
-function SectionsPage({ sections, isLoading, onSelect, t }) {
+function SectionsPage({ sections, isLoading, cardImage, onSelect, t }) {
   const [selectedSectionId, setSelectedSectionId] = useState('')
 
   const handleSelect = (section) => {
@@ -41,9 +41,8 @@ function SectionsPage({ sections, isLoading, onSelect, t }) {
           <div className="choice-grid two-column">
             {sections.map((section) => (
               <button className="choice-card compact-choice" type="button" key={section.id} onClick={() => handleSelect(section)}>
-                <span aria-hidden="true">◈</span>
+                <img src={cardImage} alt="" />
                 <strong>{section.name}</strong>
-                <small>{t('sections.select')}</small>
               </button>
             ))}
           </div>

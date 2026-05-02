@@ -3,7 +3,7 @@ function BottomNav({ active, cartCount, onNavigate, t }) {
     { path: '/', label: t('nav.home'), icon: '⌂' },
     { path: '/cart', label: t('nav.cart'), icon: '◌', badge: cartCount },
     { path: '/orders', label: t('nav.orders'), icon: '✓' },
-    { path: '/all-products', label: t('nav.all'), icon: '▦' },
+    { path: '/favorites', label: t('nav.favorites'), icon: '♥' },
   ]
 
   return (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import BottomNav from './components/BottomNav'
+import BackButton from './components/BackButton'
 import ProductModal from './components/ProductModal'
 import CartPage from './pages/CartPage'
 import CategoriesPage from './pages/CategoriesPage'
@@ -10,6 +11,9 @@ import ProductTypesPage from './pages/ProductTypesPage'
 import ProductsPage from './pages/ProductsPage'
 import SectionsPage from './pages/SectionsPage'
 import SuccessPage from './pages/SuccessPage'
+import LoginPage from './pages/LoginPage'
+import FavoritesPage from './pages/FavoritesPage'
+import OrderDetailsPage from './pages/OrderDetailsPage'
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY, translate } from './i18n'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { getPriceAmount, getProductImages } from './utils/store'
@@ -17,6 +21,8 @@ import { getPriceAmount, getProductImages } from './utils/store'
 const CART_STORAGE_KEY = 'uncle-bondq-cart'
 const USER_ID_STORAGE_KEY = 'uncle-bondq-user-id'
 const PHONE_STORAGE_KEY = 'uncle-bondq-phone'
+const FAVORITES_STORAGE_KEY = 'uncle-bondq-favorites'
+const COUPON_STORAGE_KEY = 'uncle-bondq-coupon'
 const initialCheckout = { phone: '', address: '', notes: '' }
 
 const demoCategories = [
@@ -97,6 +103,23 @@ const ensureUserId = () => {
   return userId
 }
 
+const getFavoritesKey = (phone) => `${FAVORITES_STORAGE_KEY}-${phone || 'guest'}`
+
+const getStoredFavorites = (phone) => {
+  try {
+    return JSON.parse(localStorage.getItem(getFavoritesKey(phone)) || '[]')
+  } catch {
+    return []
+  }
+}
+
+const getCouponDiscount = (code, total) => {
+  const normalizedCode = code.trim().toUpperCase()
+  if (normalizedCode === 'BONDQ10') return Math.round(total * 0.1)
+  if (normalizedCode === 'SAVE5') return Math.round(total * 0.05)
+  return 0
+}
+
 function App() {
   const [language, setLanguage] = useState(getInitialLanguage)
   const [route, setRoute] = useState(getInitialRoute)
@@ -105,10 +128,12 @@ function App() {
   const [sections, setSections] = useState([])
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
-  const [allOrders, setAllOrders] = useState([])
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [modalQuantity, setModalQuantity] = useState(1)
-  const [checkout, setCheckout] = useState(initialCheckout)
+  const [checkout, setCheckout] = useState(() => ({
+    ...initialCheckout,
+    phone: localStorage.getItem(PHONE_STORAGE_KEY) || '',
+  }))
   const [successOrder, setSuccessOrder] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isOrdersLoading, setIsOrdersLoading] = useState(false)
@@ -116,6 +141,9 @@ function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [error, setError] = useState('')
   const [ordersPhone, setOrdersPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
+  const [loggedPhone, setLoggedPhone] = useState(() => localStorage.getItem(PHONE_STORAGE_KEY) || '')
+  const [favoriteIds, setFavoriteIds] = useState(() => getStoredFavorites(localStorage.getItem(PHONE_STORAGE_KEY) || ''))
+  const [couponCode, setCouponCode] = useState(() => localStorage.getItem(COUPON_STORAGE_KEY) || '')
   const [cart, setCart] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
@@ -156,8 +184,24 @@ function App() {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(PHONE_STORAGE_KEY, ordersPhone.trim())
-  }, [ordersPhone])
+    const timeoutId = window.setTimeout(() => {
+      setFavoriteIds(getStoredFavorites(loggedPhone))
+      if (loggedPhone) {
+        setOrdersPhone(loggedPhone)
+        setCheckout((value) => ({ ...value, phone: loggedPhone }))
+      }
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loggedPhone])
+
+  useEffect(() => {
+    localStorage.setItem(getFavoritesKey(loggedPhone), JSON.stringify(favoriteIds))
+  }, [favoriteIds, loggedPhone])
+
+  useEffect(() => {
+    localStorage.setItem(COUPON_STORAGE_KEY, couponCode)
+  }, [couponCode])
 
   useEffect(() => {
     async function loadStorefront() {
@@ -203,11 +247,13 @@ function App() {
     () => cart.reduce((total, item) => total + getPriceAmount(item.price) * item.quantity, 0),
     [cart],
   )
+  const couponDiscount = useMemo(() => getCouponDiscount(couponCode, cartTotal), [cartTotal, couponCode])
+  const discountedTotal = Math.max(0, cartTotal - couponDiscount)
 
   const categoryId = route.search.get('category_id') || ''
   const typeId = route.search.get('type_id') || ''
   const sectionId = route.search.get('section_id') || ''
-  const orderId = route.search.get('order_id') || ''
+  const orderId = route.search.get('id') || ''
 
   const relatedTypes = useMemo(() => {
     if (!categoryId) return productTypes
@@ -269,7 +315,7 @@ function App() {
     )
   }
 
-  const fetchOrders = useCallback(async (admin = false, phoneOverride = '') => {
+  const fetchOrders = useCallback(async (phoneOverride = '') => {
     if (!isSupabaseConfigured) return
 
     setIsOrdersLoading(true)
@@ -278,32 +324,28 @@ function App() {
     try {
       let query = supabase.from('orders').select(orderColumns).order('created_at', { ascending: false })
 
-      if (!admin) {
-        const phone = (phoneOverride || ordersPhone).trim()
-        if (!phone) {
-          setOrders([])
-          setIsOrdersLoading(false)
-          return
-        }
-        query = query.eq('phone', phone)
+      const phone = (phoneOverride || ordersPhone || loggedPhone).trim()
+      if (!phone) {
+        setOrders([])
+        setIsOrdersLoading(false)
+        return
       }
+      query = query.eq('phone', phone)
 
       const { data, error: ordersError } = await query
       if (ordersError) throw ordersError
 
-      if (admin) setAllOrders(data || [])
-      else setOrders(data || [])
+      setOrders(data || [])
     } catch (requestError) {
       setError(requestError.message || t('app.loadError'))
     } finally {
       setIsOrdersLoading(false)
     }
-  }, [ordersPhone, t])
+  }, [loggedPhone, ordersPhone, t])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      if (route.pathname === '/orders') fetchOrders(false)
-      if (route.pathname === '/admin-orders') fetchOrders(true)
+      if (route.pathname === '/orders' || route.pathname === '/order-details') fetchOrders()
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
@@ -311,6 +353,10 @@ function App() {
 
   const submitOrder = async (event) => {
     event.preventDefault()
+    if (!loggedPhone) {
+      navigate('/login', { redirect: '/checkout' })
+      return
+    }
     if (!cart.length || !isSupabaseConfigured) return
 
     setIsSubmitting(true)
@@ -323,7 +369,7 @@ function App() {
         phone: checkout.phone,
         address: checkout.address,
         notes: checkout.notes,
-        total_amount: cartTotal,
+        total_amount: discountedTotal,
         status: 'pending',
       }
 
@@ -345,15 +391,16 @@ function App() {
       setSuccessOrder({
         id: orderResult.data.id,
         items: cart,
-        total: cartTotal,
+        total: discountedTotal,
         status: 'pending',
         created_at: orderResult.data.created_at,
       })
       setCart([])
-      setCheckout(initialCheckout)
+      setCouponCode('')
+      setCheckout({ ...initialCheckout, phone: loggedPhone })
       setOrdersPhone(checkout.phone)
-      await fetchOrders(false, checkout.phone)
-      navigate('/orders', { order_id: orderResult.data.id })
+      await fetchOrders(checkout.phone)
+      navigate('/order-details', { id: orderResult.data.id })
     } catch (submitError) {
       setError(submitError.message || t('app.submitError'))
     } finally {
@@ -361,20 +408,53 @@ function App() {
     }
   }
 
+  const handleLogin = (phone) => {
+    const cleanPhone = phone.trim()
+    localStorage.setItem(PHONE_STORAGE_KEY, cleanPhone)
+    setLoggedPhone(cleanPhone)
+    setOrdersPhone(cleanPhone)
+    setCheckout((value) => ({ ...value, phone: cleanPhone }))
+    const redirect = route.search.get('redirect') || '/'
+    navigate(redirect)
+  }
+
+  const toggleFavorite = (product) => {
+    if (!loggedPhone) {
+      navigate('/login', { redirect: route.pathname })
+      return
+    }
+
+    setFavoriteIds((ids) =>
+      ids.includes(product.id) ? ids.filter((id) => id !== product.id) : [...ids, product.id],
+    )
+  }
+
+  const navigateBack = () => {
+    if (window.history.length > 1) {
+      window.history.back()
+      return
+    }
+    navigate('/')
+  }
+
   const navItems = [
     { path: '/', label: t('nav.home'), active: route.pathname === '/' },
     { path: '/cart', label: `${t('nav.cart')} (${cartCount})`, active: route.pathname === '/cart' },
     { path: '/orders', label: t('nav.orders'), active: route.pathname === '/orders' },
+    { path: '/favorites', label: t('nav.favorites'), active: route.pathname === '/favorites' },
     { path: '/all-products', label: t('nav.all'), active: route.pathname === '/all-products' },
-    { path: '/admin-orders', label: t('app.admin'), active: route.pathname === '/admin-orders' },
+    { path: '/login', label: loggedPhone || t('login.title'), active: route.pathname === '/login' },
   ]
 
   const renderPage = () => {
+    const cardImage = `${basePath}/favicon.png`
+
     if (route.pathname === '/') {
       return (
         <CategoriesPage
           categories={categories}
           isLoading={isLoading}
+          cardImage={cardImage}
           t={t}
           onSelect={(category) => navigate('/types', { category_id: category.id })}
         />
@@ -386,6 +466,7 @@ function App() {
         <ProductTypesPage
           productTypes={relatedTypes}
           isLoading={isLoading}
+          cardImage={cardImage}
           t={t}
           onSelect={(type) => {
             sessionStorage.setItem('uncle-bondq-category-id', categoryId)
@@ -400,6 +481,7 @@ function App() {
         <SectionsPage
           sections={relatedSections}
           isLoading={isLoading}
+          cardImage={cardImage}
           t={t}
           onSelect={(section) =>
             navigate('/products', {
@@ -419,11 +501,13 @@ function App() {
           products={filteredProducts}
           isLoading={isLoading}
           cartCount={cartCount}
+          favoriteIds={favoriteIds}
           onOpenProduct={(product) => {
             setModalQuantity(1)
             setSelectedProduct(product)
           }}
           onAddToCart={addToCart}
+          onToggleFavorite={toggleFavorite}
           onViewCart={() => navigate('/cart')}
           t={t}
         />
@@ -436,6 +520,10 @@ function App() {
           cart={cart}
           t={t}
           cartTotal={cartTotal}
+          couponCode={couponCode}
+          couponDiscount={couponDiscount}
+          discountedTotal={discountedTotal}
+          onCouponChange={setCouponCode}
           onDecrease={(id) => updateQuantity(id, -1)}
           onIncrease={(id) => updateQuantity(id, 1)}
           onRemove={(id) => setCart((items) => items.filter((item) => item.id !== id))}
@@ -452,7 +540,10 @@ function App() {
           t={t}
           setCheckout={setCheckout}
           cart={cart}
-          cartTotal={cartTotal}
+          cartTotal={discountedTotal}
+          couponCode={couponCode}
+          couponDiscount={couponDiscount}
+          onCouponChange={setCouponCode}
           isSubmitting={isSubmitting}
           onSubmit={submitOrder}
         />
@@ -463,31 +554,51 @@ function App() {
       return (
         <OrdersPage
           orders={orders}
-          selectedOrderId={orderId}
           isLoading={isOrdersLoading}
           language={language}
           phone={ordersPhone}
           onPhoneChange={setOrdersPhone}
-          onRefresh={() => fetchOrders(false)}
-          onOpenOrder={(id) => navigate('/orders', { order_id: id })}
+          onRefresh={() => fetchOrders()}
+          onOpenOrder={(id) => navigate('/order-details', { id })}
           t={t}
         />
       )
     }
 
-    if (route.pathname === '/admin-orders') {
+    if (route.pathname === '/order-details') {
       return (
-        <OrdersPage
-          orders={allOrders}
-          selectedOrderId={orderId}
+        <OrderDetailsPage
+          order={orders.find((order) => order.id === orderId)}
           isLoading={isOrdersLoading}
-          isAdmin
           language={language}
-          onRefresh={() => fetchOrders(true)}
-          onOpenOrder={(id) => navigate('/admin-orders', { order_id: id })}
+          onRefresh={() => fetchOrders()}
           t={t}
         />
       )
+    }
+
+    if (route.pathname === '/favorites') {
+      const favoriteProducts = products.filter((product) => favoriteIds.includes(product.id))
+
+      return (
+        <FavoritesPage
+          products={favoriteProducts}
+          favoriteIds={favoriteIds}
+          isLoggedIn={Boolean(loggedPhone)}
+          onLogin={() => navigate('/login', { redirect: '/favorites' })}
+          onOpenProduct={(product) => {
+            setModalQuantity(1)
+            setSelectedProduct(product)
+          }}
+          onAddToCart={addToCart}
+          onToggleFavorite={toggleFavorite}
+          t={t}
+        />
+      )
+    }
+
+    if (route.pathname === '/login') {
+      return <LoginPage initialPhone={loggedPhone} onSubmit={handleLogin} t={t} />
     }
 
     return (
@@ -521,6 +632,11 @@ function App() {
         <button className="language-link" type="button" onClick={() => setLanguage((current) => (current === 'ar' ? 'en' : 'ar'))}>
           {isArabic ? t('app.languageEnglish') : t('app.languageArabic')}
         </button>
+        {loggedPhone && (
+          <button className="language-link" type="button" onClick={() => handleLogin('')}>
+            {t('login.logout')}
+          </button>
+        )}
       </aside>
 
       <header className="mobile-header">
@@ -550,11 +666,17 @@ function App() {
                 {item.label}
               </button>
             ))}
+            {loggedPhone && (
+              <button type="button" onClick={() => handleLogin('')}>
+                {t('login.logout')}
+              </button>
+            )}
           </aside>
         </div>
       )}
 
       <section className="content-shell">
+        {route.pathname !== '/' && <BackButton onClick={navigateBack} t={t} />}
         {error && <p className="notice notice-error">{error}</p>}
         <AnimatePresence mode="wait">
           <motion.div

@@ -1,6 +1,6 @@
 import { getProductImages, money } from '../utils/store'
 
-function ProductCard({ product, onOpen, onAddToCart, t }) {
+function ProductCard({ product, isFavorite = false, onOpen, onAddToCart, onToggleFavorite, t }) {
   const image = getProductImages(product)[0]
 
   return (
@@ -18,10 +18,20 @@ function ProductCard({ product, onOpen, onAddToCart, t }) {
           {product.weight && <span className="product-weight">{product.weight}</span>}
         </div>
       </button>
-      <button className="primary-button compact" type="button" onClick={() => onAddToCart(product, 1)}>
-        <span aria-hidden="true">＋</span>
-        {t('products.addToCart')}
-      </button>
+      <div className="product-actions">
+        <button className="primary-button compact" type="button" onClick={() => onAddToCart(product, 1)}>
+          <span aria-hidden="true">＋</span>
+          {t('products.addToCart')}
+        </button>
+        <button
+          className={isFavorite ? 'favorite-button is-active' : 'favorite-button'}
+          type="button"
+          onClick={() => onToggleFavorite(product)}
+          aria-label={t('favorites.toggle')}
+        >
+          ♥
+        </button>
+      </div>
     </article>
   )
 }

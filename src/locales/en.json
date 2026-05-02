@@ -6,7 +6,6 @@
     "home": "Home",
     "orders": "My Orders",
     "allProducts": "All Products",
-    "admin": "Admin",
     "back": "Back",
     "languageEnglish": "English",
     "languageArabic": "العربية",
@@ -18,6 +17,7 @@
     "home": "Home",
     "cart": "Cart",
     "orders": "Orders",
+    "favorites": "Favorites",
     "all": "Products"
   },
   "search": {
@@ -39,7 +39,28 @@
     "checkout": "Checkout",
     "success": "Success",
     "orders": "My Orders",
-    "admin": "Admin Orders"
+    "orderDetails": "Order Details",
+    "favorites": "Favorites",
+    "login": "Login"
+  },
+  "login": {
+    "title": "Login",
+    "copy": "Enter your phone number only to save favorites and place orders.",
+    "submit": "Continue",
+    "logout": "Logout"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "copy": "Products saved for your phone number.",
+    "loginCopy": "Login by phone to add products to favorites.",
+    "empty": "No favorite products yet.",
+    "toggle": "Add or remove favorite"
+  },
+  "coupon": {
+    "label": "Coupon",
+    "placeholder": "Example: BONDQ10",
+    "discount": "Discount",
+    "after": "Total after discount"
   },
   "categories": {
     "title": "Choose a category",
@@ -100,7 +121,7 @@
   },
   "success": {
     "title": "Order sent",
-    "copy": "We will save your phone number on this device to show your orders later without login.",
+    "copy": "Your order was saved and linked to your phone number.",
     "summary": "Order summary",
     "orderId": "Order ID: {{id}}",
     "home": "Back to Home"
@@ -108,12 +129,12 @@
   "orders": {
     "title": "My Orders",
     "copy": "These orders are fetched by phone number only.",
-    "adminTitle": "All Orders",
-    "adminCopy": "Manager view for all orders without filtering.",
     "empty": "No orders yet.",
     "refresh": "Refresh",
     "phoneFilter": "Phone number for orders",
     "details": "Order details",
+    "detailsCopy": "Products, status, date, and total.",
+    "notFound": "Order not found.",
     "items": "Items",
     "phone": "Phone",
     "address": "Address",

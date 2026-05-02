@@ -7,8 +7,10 @@ function ProductsPage({
   products,
   isLoading,
   cartCount,
+  favoriteIds = [],
   onOpenProduct,
   onAddToCart,
+  onToggleFavorite,
   onViewCart,
   t,
 }) {
@@ -58,8 +60,10 @@ function ProductsPage({
             <ProductCard
               product={product}
               key={product.id}
+              isFavorite={favoriteIds.includes(product.id)}
               onOpen={onOpenProduct}
               onAddToCart={onAddToCart}
+              onToggleFavorite={onToggleFavorite}
               t={t}
             />
           ))}

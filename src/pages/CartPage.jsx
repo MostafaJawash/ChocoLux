@@ -2,7 +2,20 @@ import CartItem from '../components/CartItem'
 import PageIntro from '../components/PageIntro'
 import { money } from '../utils/store'
 
-function CartPage({ cart, cartTotal, onDecrease, onIncrease, onRemove, onCheckout, onContinue, t }) {
+function CartPage({
+  cart,
+  cartTotal,
+  couponCode,
+  couponDiscount,
+  discountedTotal,
+  onCouponChange,
+  onDecrease,
+  onIncrease,
+  onRemove,
+  onCheckout,
+  onContinue,
+  t,
+}) {
   return (
     <>
       <PageIntro
@@ -29,6 +42,24 @@ function CartPage({ cart, cartTotal, onDecrease, onIncrease, onRemove, onCheckou
           <aside className="summary-card">
             <span>{t('cart.total')}</span>
             <strong>{money(cartTotal)}</strong>
+            <label className="coupon-field">
+              {t('coupon.label')}
+              <input
+                value={couponCode}
+                onChange={(event) => onCouponChange(event.target.value)}
+                placeholder={t('coupon.placeholder')}
+              />
+            </label>
+            {couponDiscount > 0 && (
+              <div className="total-row">
+                <span>{t('coupon.discount')}</span>
+                <strong>-{money(couponDiscount)}</strong>
+              </div>
+            )}
+            <div className="total-row final-total">
+              <span>{t('coupon.after')}</span>
+              <strong>{money(discountedTotal)}</strong>
+            </div>
             <button className="primary-button" type="button" onClick={onCheckout}>
               {t('cart.checkout')}
             </button>

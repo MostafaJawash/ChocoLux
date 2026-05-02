@@ -1,7 +1,18 @@
 import OrderSummaryTable from '../components/OrderSummaryTable'
 import PageIntro from '../components/PageIntro'
 
-function CheckoutPage({ checkout, setCheckout, cart, cartTotal, isSubmitting, onSubmit, t }) {
+function CheckoutPage({
+  checkout,
+  setCheckout,
+  cart,
+  cartTotal,
+  couponCode,
+  couponDiscount,
+  onCouponChange,
+  isSubmitting,
+  onSubmit,
+  t,
+}) {
   return (
     <>
       <PageIntro
@@ -45,6 +56,20 @@ function CheckoutPage({ checkout, setCheckout, cart, cartTotal, isSubmitting, on
 
         <aside className="summary-card">
           <h2>{t('checkout.summary')}</h2>
+          <label className="coupon-field">
+            {t('coupon.label')}
+            <input
+              value={couponCode}
+              onChange={(event) => onCouponChange(event.target.value)}
+              placeholder={t('coupon.placeholder')}
+            />
+          </label>
+          {couponDiscount > 0 && (
+            <div className="total-row">
+              <span>{t('coupon.discount')}</span>
+              <strong>-{couponDiscount.toLocaleString('ar-SY')} ل.س</strong>
+            </div>
+          )}
           <OrderSummaryTable items={cart} total={cartTotal} t={t} />
         </aside>
       </section>
