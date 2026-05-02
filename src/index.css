@@ -870,6 +870,12 @@ img {
   text-decoration: none;
 }
 
+.site-footer svg,
+.whatsapp-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .whatsapp-button {
   position: fixed;
   inset-inline-end: 14px;
