@@ -23,35 +23,77 @@ export const syncUserProfile = async (userId, fullName, phone) => {
   }
 
   try {
+    // Validate inputs
+    if (!userId || !fullName || !phone) {
+      return { success: false, error: 'Missing required fields' }
+    }
+
     // Convert phone to integer (remove any non-numeric characters)
     const phoneInt = parseInt(String(phone).replace(/[^\d]/g, ''), 10)
     if (!phoneInt || phoneInt <= 0) {
-      return { success: false, error: 'Invalid phone number' }
+      return { success: false, error: 'Invalid phone number format' }
     }
 
-    // Upsert profile - insert if not exists, update if exists
-    const { data, error } = await supabase
+    const fullNameTrimmed = fullName.trim()
+    if (!fullNameTrimmed) {
+      return { success: false, error: 'Name cannot be empty' }
+    }
+
+    console.log('Syncing profile:', { userId, fullName: fullNameTrimmed, phone: phoneInt })
+
+    const profileData = {
+      id: userId,
+      full_name: fullNameTrimmed,
+      phone: phoneInt,
+      updated_at: new Date().toISOString(),
+    }
+
+    // First, check if profile exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from('profiles')
-      .upsert(
-        {
-          id: userId,
-          full_name: fullName.trim(),
-          phone: phoneInt,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' }, // Key to check for conflicts
-      )
-      .select()
+      .select('id')
+      .eq('id', userId)
       .single()
 
-    if (error) {
-      console.error('Profile sync error:', error)
-      return { success: false, error: error.message }
+    let result
+
+    if (checkError && checkError.code === 'PGRST116') {
+      // Profile doesn't exist - insert new one
+      console.log('Creating new profile...')
+      result = await supabase
+        .from('profiles')
+        .insert([profileData])
+        .select()
+        .single()
+    } else if (existingProfile) {
+      // Profile exists - update it
+      console.log('Updating existing profile...')
+      result = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullNameTrimmed,
+          phone: phoneInt,
+          updated_at: profileData.updated_at,
+        })
+        .eq('id', userId)
+        .select()
+        .single()
+    } else if (checkError) {
+      // Some other error occurred
+      throw checkError
     }
 
+    const { data, error } = result
+
+    if (error) {
+      console.error('Supabase error:', error)
+      return { success: false, error: error.message || 'Database error' }
+    }
+
+    console.log('Profile synced successfully:', data)
     return { success: true, data }
   } catch (err) {
     console.error('Profile sync exception:', err)
-    return { success: false, error: err.message }
+    return { success: false, error: err.message || 'Unknown error' }
   }
 }

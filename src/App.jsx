@@ -423,18 +423,26 @@ function App() {
       phone: nextProfile.phone.trim(),
     }
 
+    if (!cleanProfile.phone || !cleanProfile.full_name) {
+      setError(t('app.profileError'))
+      return
+    }
+
     // Sync with Supabase database if configured
-    if (isSupabaseConfigured && cleanProfile.phone && cleanProfile.full_name) {
+    if (isSupabaseConfigured) {
       try {
         const userId = ensureUserId()
         const syncResult = await syncUserProfile(userId, cleanProfile.full_name, cleanProfile.phone)
         if (!syncResult.success) {
-          console.warn('Profile sync warning:', syncResult.error)
-          // Continue with localStorage save even if sync fails
+          setError(`${t('app.profileError')}: ${syncResult.error}`)
+          return
         }
+        // Clear error on success
+        setError('')
       } catch (syncError) {
         console.error('Profile sync error:', syncError)
-        // Continue with localStorage save even if sync fails
+        setError(syncError.message || t('app.profileError'))
+        return
       }
     }
 
@@ -634,7 +642,7 @@ function App() {
     }
 
     if (route.pathname === '/profile') {
-      return <ProfilePage initialProfile={profile} onSubmit={handleProfileSave} t={t} />
+      return <ProfilePage initialProfile={profile} onSubmit={handleProfileSave} t={t} error={error} />
     }
 
     return (
