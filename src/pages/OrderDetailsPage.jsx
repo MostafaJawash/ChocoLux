@@ -15,9 +15,9 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
   const totalAmount = Number(order?.total_amount)
   const finalAmount = Number(order?.final_amount)
   const discountAmount = Number(order?.discount_amount)
-  const hasTotalAmount = Number.isFinite(totalAmount)
-  const hasFinalAmount = Number.isFinite(finalAmount)
-  const hasDiscount = Number.isFinite(discountAmount) && discountAmount > 0
+  const displayTotal = Number.isFinite(totalAmount) ? totalAmount : Number.isFinite(finalAmount) ? finalAmount : 0
+  const displayFinal = Number.isFinite(finalAmount) ? finalAmount : displayTotal
+  const displayDiscount = Number.isFinite(discountAmount) ? discountAmount : 0
 
   return (
     <>
@@ -37,9 +37,9 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
               <h2>{t('orders.details')}</h2>
               <p>{t('orders.date')}: {formatDate(order.created_at, language)}</p>
               <div className="order-price-breakdown">
-                {hasTotalAmount && <p>السعر الكلي: {money(totalAmount)}</p>}
-                {hasDiscount && <p>الخصم: {money(discountAmount)}</p>}
-                {hasFinalAmount && <p>السعر بعد الخصم: {money(finalAmount)}</p>}
+                <p>السعر الكلي: {money(displayTotal)}</p>
+                <p>الخصم: {money(displayDiscount)}</p>
+                <p>السعر بعد الخصم: {money(displayFinal)}</p>
               </div>
             </div>
             <span>{t(`orders.status.${order.status || 'new'}`)}</span>

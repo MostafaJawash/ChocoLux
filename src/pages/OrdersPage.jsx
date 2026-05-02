@@ -25,15 +25,11 @@ function OrdersPage({
     return Number.isFinite(parsed) ? parsed : null
   }
 
-  const renderPriceLine = (label, value) => {
-    if (value === null) return null
-
-    return (
-      <p>
-        {label}: {money(value)}
-      </p>
-    )
-  }
+  const renderPriceLine = (label, value) => (
+    <p>
+      {label}: {money(value)}
+    </p>
+  )
 
   if (!isLoggedIn) {
     return (
@@ -73,12 +69,15 @@ function OrdersPage({
             const totalAmount = toAmount(order.total_amount)
             const finalAmount = toAmount(order.final_amount)
             const discountAmount = toAmount(order.discount_amount)
+            const displayTotal = totalAmount ?? finalAmount ?? 0
+            const displayFinal = finalAmount ?? totalAmount ?? 0
+            const displayDiscount = discountAmount ?? 0
 
             return (
               <article className="order-card" key={order.id}>
               <header>
                 <div>
-                  <strong>{money(finalAmount ?? order.total_amount)}</strong>
+                  <strong>{money(displayFinal)}</strong>
                   <small>{t('orders.date')}: {formatDate(order.created_at, language)}</small>
                 </div>
                 <span>{t(`orders.status.${order.status || 'new'}`)}</span>
@@ -88,9 +87,9 @@ function OrdersPage({
                 <p>{t('orders.phone')}: {order.phone}</p>
                 <p>{t('orders.address')}: {order.address}</p>
                 <div className="order-price-breakdown">
-                  {renderPriceLine('السعر الكلي', totalAmount)}
-                  {discountAmount !== null && discountAmount > 0 && renderPriceLine('الخصم', discountAmount)}
-                  {renderPriceLine('السعر بعد الخصم', finalAmount)}
+                  {renderPriceLine('السعر الكلي', displayTotal)}
+                  {renderPriceLine('الخصم', displayDiscount)}
+                  {renderPriceLine('السعر بعد الخصم', displayFinal)}
                 </div>
                 {order.notes && <p>{t('orders.notes')}: {order.notes}</p>}
               </div>
