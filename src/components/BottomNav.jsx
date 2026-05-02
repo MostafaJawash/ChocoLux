@@ -4,7 +4,7 @@ function BottomNav({ active, cartCount, onNavigate, t }) {
     { path: '/products', label: t('nav.products'), icon: '▦' },
     { path: '/', label: t('nav.home'), icon: '⌂', isHome: true },
     { path: '/orders', label: t('nav.orders'), icon: '✓' },
-    { path: '/cart', label: t('nav.cart'), icon: '◌', badge: cartCount },
+    { path: '/cart', label: t('nav.cart'), icon: '🛒', badge: cartCount },
   ]
 
   return (

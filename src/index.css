@@ -73,6 +73,9 @@ img {
 .content-shell {
   width: min(100%, 1160px);
   margin-inline: auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   padding: 76px 14px 128px;
 }
 
@@ -240,7 +243,7 @@ img {
 }
 
 .choice-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .product-grid {
@@ -263,27 +266,44 @@ img {
 }
 
 .choice-card {
+  position: relative;
   display: grid;
+  align-content: end;
   gap: 8px;
-  min-height: 124px;
-  padding: 14px;
+  min-height: 150px;
+  overflow: hidden;
+  padding: 16px;
   text-align: start;
 }
 
 .choice-card > img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 86px;
-  border-radius: 8px;
+  height: 100%;
+  border-radius: 0;
   object-fit: cover;
-  background: #f1e6d7;
+}
+
+.choice-card::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.62));
+  content: "";
 }
 
 .choice-card strong {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-size: 1.1rem;
   line-height: 1.3;
 }
 
 .choice-card small {
-  color: var(--muted);
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.82);
   line-height: 1.45;
 }
 
@@ -771,11 +791,17 @@ img {
 .bottom-nav .home-nav-item {
   min-height: 64px;
   margin-top: -16px;
-  border: 3px solid #fff;
+  border: 3px solid transparent;
   border-radius: 16px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: var(--shadow);
+}
+
+.bottom-nav .home-nav-item.is-active {
+  border-color: #fff;
   background: #1f7a4d;
   color: #fff;
-  box-shadow: var(--shadow);
 }
 
 .bottom-nav .home-nav-item span {
@@ -810,10 +836,12 @@ img {
 
 .site-footer {
   display: grid;
+  justify-items: center;
   gap: 8px;
-  margin-top: 34px;
+  margin-top: auto;
   border-top: 1px solid var(--line);
   padding-top: 16px;
+  text-align: center;
   color: var(--muted);
   font-size: 0.9rem;
 }
@@ -824,6 +852,7 @@ img {
 
 .site-footer div {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
 }
@@ -832,6 +861,24 @@ img {
   color: var(--brand);
   font-weight: 800;
   text-decoration: none;
+}
+
+.whatsapp-button {
+  position: fixed;
+  inset-inline-end: 14px;
+  bottom: 92px;
+  z-index: 42;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff;
+  padding: 0 16px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: var(--shadow);
 }
 
 @keyframes shimmer {
@@ -868,6 +915,10 @@ img {
 
   .content-shell {
     padding: 28px 28px 48px;
+  }
+
+  .whatsapp-button {
+    bottom: 22px;
   }
 
   .mobile-header,

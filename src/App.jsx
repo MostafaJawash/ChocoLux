@@ -448,6 +448,8 @@ function App() {
     navigate('/')
   }
 
+  const showBackButton = ['/types', '/sections', '/products', '/order-details'].includes(route.pathname)
+
   const navItems = [
     { path: '/', label: t('nav.home'), active: route.pathname === '/' },
     { path: '/cart', label: `${t('nav.cart')} (${cartCount})`, active: route.pathname === '/cart' },
@@ -692,7 +694,7 @@ function App() {
       )}
 
       <section className="content-shell">
-        {route.pathname !== '/' && <BackButton onClick={navigateBack} t={t} />}
+        {showBackButton && <BackButton onClick={navigateBack} t={t} />}
         {error && <p className="notice notice-error">{error}</p>}
         <AnimatePresence mode="wait">
           <motion.div
@@ -717,6 +719,10 @@ function App() {
           </div>
         </footer>
       </section>
+
+      <a className="whatsapp-button" href="https://wa.me/963934307797" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+        واتساب
+      </a>
 
       <BottomNav active={route.pathname} cartCount={cartCount} onNavigate={navigate} t={t} />
 
