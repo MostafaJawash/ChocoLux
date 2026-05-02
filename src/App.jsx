@@ -373,45 +373,51 @@ function App() {
     setError('')
 
     try {
-      ensureUserId()
-      const orderPayload = {
-        customer_name: checkout.full_name || profile.full_name,
-        phone: checkout.phone,
-        address: checkout.address,
-        notes: checkout.notes,
-        total_amount: discountedTotal,
-        status: 'pending',
-      }
-
-      const orderResult = await supabase.from('orders').insert(orderPayload).select('id, created_at').single()
-      if (orderResult.error) throw orderResult.error
-
-      const orderItems = cart.map((item) => ({
-        order_id: orderResult.data.id,
+      const user = { id: ensureUserId() }
+      const rpcItems = cart.map((item) => ({
         product_id: item.id,
         product_name: item.name,
         quantity: item.quantity,
         unit_price: getPriceAmount(item.price),
-        total_price: getPriceAmount(item.price) * item.quantity,
       }))
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (itemsError) throw itemsError
+      const { data: orderData, error: createOrderError } = await supabase.rpc('create_order', {
+        p_customer_name: checkout.fullName || checkout.full_name || profile.full_name,
+        p_phone: checkout.phone,
+        p_address: checkout.address,
+        p_notes: checkout.notes,
+        p_user_id: user.id,
+        p_coupon_code: couponCode || '',
+        p_items: rpcItems,
+      })
+
+      if (createOrderError) throw createOrderError
+
+      const createdOrder = Array.isArray(orderData) ? orderData[0] : orderData
+      const createdOrderId = createdOrder?.id || createdOrder?.order_id || createdOrder
+      const createdAt = createdOrder?.created_at || new Date().toISOString()
 
       setSuccessOrder({
-        id: orderResult.data.id,
+        id: createdOrderId || '',
         items: cart,
         total: discountedTotal,
         status: 'pending',
-        created_at: orderResult.data.created_at,
+        created_at: createdAt,
       })
       setCart([])
       setCouponCode('')
       setCheckout({ ...initialCheckout, full_name: profile.full_name, phone: loggedPhone })
       await fetchOrders(checkout.phone)
-      navigate('/order-details', { id: orderResult.data.id })
+
+      if (createdOrderId) {
+        navigate('/order-details', { id: createdOrderId })
+      } else {
+        navigate('/orders')
+      }
     } catch (submitError) {
-      setError(submitError.message || t('app.submitError'))
+      const message = submitError.message || t('app.submitError')
+      setError(message)
+      window.alert(message)
     } finally {
       setIsSubmitting(false)
     }
