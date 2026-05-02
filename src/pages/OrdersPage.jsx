@@ -70,7 +70,7 @@ function OrdersPage({
             const finalAmount = toAmount(order.final_amount)
             const discountAmount = toAmount(order.discount_amount)
             const displayTotal = totalAmount ?? finalAmount ?? 0
-            const displayFinal = finalAmount ?? totalAmount ?? 0
+            const displayFinal = finalAmount && finalAmount > 0 ? finalAmount : displayTotal
             const displayDiscount = discountAmount ?? 0
 
             return (

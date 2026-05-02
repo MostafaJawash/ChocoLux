@@ -16,7 +16,7 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
   const finalAmount = Number(order?.final_amount)
   const discountAmount = Number(order?.discount_amount)
   const displayTotal = Number.isFinite(totalAmount) ? totalAmount : Number.isFinite(finalAmount) ? finalAmount : 0
-  const displayFinal = Number.isFinite(finalAmount) ? finalAmount : displayTotal
+  const displayFinal = Number.isFinite(finalAmount) && finalAmount > 0 ? finalAmount : displayTotal
   const displayDiscount = Number.isFinite(discountAmount) ? discountAmount : 0
 
   return (
@@ -44,7 +44,7 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
             </div>
             <span>{t(`orders.status.${order.status || 'new'}`)}</span>
           </header>
-          <OrderSummaryTable items={order.order_items || []} total={order.final_amount ?? order.total_amount} t={t} />
+          <OrderSummaryTable items={order.order_items || []} total={displayFinal} t={t} />
         </article>
       ) : (
         <p className="notice">{t('orders.notFound')}</p>
