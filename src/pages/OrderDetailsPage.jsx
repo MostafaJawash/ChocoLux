@@ -31,7 +31,7 @@ function OrderDetailsPage({ order, isLoading, language, onRefresh, t }) {
             </div>
             <span>{t(`orders.status.${order.status || 'new'}`)}</span>
           </header>
-          <OrderSummaryTable items={order.order_items || []} total={order.total_amount} t={t} />
+          <OrderSummaryTable items={order.order_items || []} total={order.final_amount ?? order.total_amount} t={t} />
         </article>
       ) : (
         <p className="notice">{t('orders.notFound')}</p>

@@ -67,7 +67,7 @@ const demoProducts = [
 
 const productColumns = 'id, name, price, description, weight, images, category_id, type_id, section_id'
 const orderColumns =
-  'id, customer_name, phone, address, notes, status, total_amount, created_at, order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price)'
+  'id, customer_name, phone, address, notes, status, total_amount, final_amount, discount_amount, created_at, order_items(id, order_id, product_id, product_name, quantity, unit_price, total_price)'
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
 
@@ -394,16 +394,20 @@ function App() {
       if (createOrderError) throw createOrderError
 
       const createdOrder = Array.isArray(orderData) ? orderData[0] : orderData
-      const createdOrderId = createdOrder?.id || createdOrder?.order_id || createdOrder
+      const createdOrderId = createdOrder?.order_id || createdOrder?.id || createdOrder
       const createdAt = createdOrder?.created_at || new Date().toISOString()
+      const finalTotal = Number(createdOrder?.final_total ?? discountedTotal)
 
       setSuccessOrder({
         id: createdOrderId || '',
         items: cart,
-        total: discountedTotal,
+        total: Number.isFinite(finalTotal) ? finalTotal : discountedTotal,
         status: 'pending',
         created_at: createdAt,
       })
+
+      window.alert(`المبلغ النهائي بعد الخصم: ${(Number.isFinite(finalTotal) ? finalTotal : discountedTotal).toLocaleString('ar-SY')} ل.س`)
+
       setCart([])
       setCouponCode('')
       setCheckout({ ...initialCheckout, full_name: profile.full_name, phone: loggedPhone })

@@ -58,7 +58,7 @@ function OrdersPage({
             <article className="order-card" key={order.id}>
               <header>
                 <div>
-                  <strong>{money(order.total_amount)}</strong>
+                  <strong>{money(order.final_amount ?? order.total_amount)}</strong>
                   <small>{t('orders.date')}: {formatDate(order.created_at, language)}</small>
                 </div>
                 <span>{t(`orders.status.${order.status || 'new'}`)}</span>
