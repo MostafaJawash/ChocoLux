@@ -16,7 +16,7 @@ import ProfilePage from './pages/ProfilePage'
 import FavoritesPage from './pages/FavoritesPage'
 import OrderDetailsPage from './pages/OrderDetailsPage'
 import { getInitialLanguage, LANGUAGE_STORAGE_KEY, translate } from './i18n'
-import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { isSupabaseConfigured, supabase, syncUserProfile } from './lib/supabase'
 import { getPriceAmount, getProductImages } from './utils/store'
 
 const CART_STORAGE_KEY = 'uncle-bondq-cart'
@@ -417,11 +417,28 @@ function App() {
     }
   }
 
-  const handleProfileSave = (nextProfile) => {
+  const handleProfileSave = async (nextProfile) => {
     const cleanProfile = {
       full_name: nextProfile.full_name.trim(),
       phone: nextProfile.phone.trim(),
     }
+
+    // Sync with Supabase database if configured
+    if (isSupabaseConfigured && cleanProfile.phone && cleanProfile.full_name) {
+      try {
+        const userId = ensureUserId()
+        const syncResult = await syncUserProfile(userId, cleanProfile.full_name, cleanProfile.phone)
+        if (!syncResult.success) {
+          console.warn('Profile sync warning:', syncResult.error)
+          // Continue with localStorage save even if sync fails
+        }
+      } catch (syncError) {
+        console.error('Profile sync error:', syncError)
+        // Continue with localStorage save even if sync fails
+      }
+    }
+
+    // Save to localStorage
     localStorage.setItem(FULL_NAME_STORAGE_KEY, cleanProfile.full_name)
     localStorage.setItem(PHONE_STORAGE_KEY, cleanProfile.phone)
     setProfile(cleanProfile)

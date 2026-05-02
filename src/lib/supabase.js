@@ -8,3 +8,50 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
+
+/**
+ * Sync user profile with database
+ * Creates new profile if not exists, updates if exists
+ * @param {string} userId - User UUID
+ * @param {string} fullName - User full name
+ * @param {string} phone - User phone number (will be stored as int8)
+ * @returns {Promise<Object>} Profile data or error
+ */
+export const syncUserProfile = async (userId, fullName, phone) => {
+  if (!isSupabaseConfigured || !supabase) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  try {
+    // Convert phone to integer (remove any non-numeric characters)
+    const phoneInt = parseInt(String(phone).replace(/[^\d]/g, ''), 10)
+    if (!phoneInt || phoneInt <= 0) {
+      return { success: false, error: 'Invalid phone number' }
+    }
+
+    // Upsert profile - insert if not exists, update if exists
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: userId,
+          full_name: fullName.trim(),
+          phone: phoneInt,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }, // Key to check for conflicts
+      )
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Profile sync error:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (err) {
+    console.error('Profile sync exception:', err)
+    return { success: false, error: err.message }
+  }
+}

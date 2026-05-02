@@ -220,6 +220,24 @@ img {
   font-weight: 800;
 }
 
+.section-select select {
+  min-height: 46px;
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  padding: 12px 13px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a4a24' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  box-sizing: border-box;
+}
+
 .search-field input,
 .phone-filter input,
 .section-select select,
@@ -232,6 +250,8 @@ img {
   background: #fff;
   color: var(--text);
   padding: 12px 13px;
+  font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .choice-grid,
@@ -902,9 +922,21 @@ img {
   }
 }
 
+.choice-grid.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-grid.two-column .compact-choice {
+  min-height: 120px;
+}
+
 @media (min-width: 680px) {
   .choice-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .choice-grid.two-column {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .product-grid {
