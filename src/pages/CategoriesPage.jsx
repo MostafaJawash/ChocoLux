@@ -29,7 +29,6 @@ function CategoriesPage({ categories, isLoading, cardImage, onSelect, t }) {
             <button className="choice-card" type="button" key={category.id} onClick={() => onSelect(category)}>
               <img src={cardImage} alt="" />
               <strong>{category.name}</strong>
-              <small>{t('categories.fallback')}</small>
             </button>
           ))}
         </div>

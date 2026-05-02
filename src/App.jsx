@@ -711,17 +711,17 @@ function App() {
           <p>© Uncle Bondq - All rights reserved</p>
           <div>
             <a href="https://www.facebook.com/profile.php?id=61589280504896&mibextid=ZbWKwL" target="_blank" rel="noreferrer">
-              Facebook
+              f
             </a>
             <a href="https://www.instagram.com/uncle_bondq?igsh=MWJ5NzNxemZtbWQwdw==" target="_blank" rel="noreferrer">
-              Instagram
+              ◎
             </a>
           </div>
         </footer>
       </section>
 
       <a className="whatsapp-button" href="https://wa.me/963934307797" target="_blank" rel="noreferrer" aria-label="WhatsApp">
-        واتساب
+        ☎
       </a>
 
       <BottomNav active={route.pathname} cartCount={cartCount} onNavigate={navigate} t={t} />
